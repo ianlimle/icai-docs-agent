@@ -48,12 +48,17 @@ def sync(
     # Run each provider
     results: list[SyncResult] = []
     for provider in active_providers:
-        if config is None or not provider.should_sync(config):
-            continue
-
         # Get output directory (custom or default)
         output_dir = output_dirs.get(provider.name, provider.default_output_dir)
         output_path = Path(output_dir)
+
+        if config is None:
+            continue
+
+        provider.pre_sync(config, output_path)
+
+        if not provider.should_sync(config):
+            continue
 
         # Get items and sync
         items = provider.get_items(config)
