@@ -39,6 +39,9 @@ dependencies = [
     "notion2md>=2.9.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest-cov"]
+
 [project.scripts]
 nao = "nao_core.main:app"
 

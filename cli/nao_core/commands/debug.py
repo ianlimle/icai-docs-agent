@@ -9,7 +9,7 @@ from nao_core.config.databases import AnyDatabaseConfig
 console = Console()
 
 
-def test_database_connection(db_config: AnyDatabaseConfig) -> tuple[bool, str]:
+def check_database_connection(db_config: AnyDatabaseConfig) -> tuple[bool, str]:
     """Test connectivity to a database.
 
     Returns:
@@ -35,7 +35,7 @@ def test_database_connection(db_config: AnyDatabaseConfig) -> tuple[bool, str]:
         return False, str(e)
 
 
-def test_llm_connection(llm_config) -> tuple[bool, str]:
+def check_llm_connection(llm_config) -> tuple[bool, str]:
     """Test connectivity to an LLM provider.
 
     Returns:
@@ -43,9 +43,9 @@ def test_llm_connection(llm_config) -> tuple[bool, str]:
     """
     try:
         if llm_config.provider.value == "openai":
-            import openai
+            from openai import OpenAI
 
-            client = openai.OpenAI(api_key=llm_config.api_key)
+            client = OpenAI(api_key=llm_config.api_key)
             # Make a minimal API call to verify the key works
             models = client.models.list()
             # Just check we can iterate (don't need to consume all)
@@ -61,7 +61,7 @@ def test_llm_connection(llm_config) -> tuple[bool, str]:
             model_count = sum(1 for _ in models)
             return True, f"Connected successfully ({model_count} models available)"
         else:
-            return False, f"Unknown provider: {llm_config.provider}"
+            return False, f"Unknown provider: {llm_config.provider.value}"
     except Exception as e:
         return False, str(e)
 
@@ -95,7 +95,7 @@ def debug():
 
         for db in config.databases:
             console.print(f"  Testing [cyan]{db.name}[/cyan]...", end=" ")
-            success, message = test_database_connection(db)
+            success, message = check_database_connection(db)
 
             if success:
                 console.print("[bold green]✓[/bold green]")
@@ -132,7 +132,7 @@ def debug():
         llm_table.add_column("Details")
 
         console.print(f"  Testing [cyan]{config.llm.provider.value}[/cyan]...", end=" ")
-        success, message = test_llm_connection(config.llm)
+        success, message = check_llm_connection(config.llm)
 
         if success:
             console.print("[bold green]✓[/bold green]")
