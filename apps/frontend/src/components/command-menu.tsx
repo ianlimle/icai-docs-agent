@@ -77,7 +77,7 @@ export function CommandMenu() {
 				group: 'Jump to',
 			},
 			{
-				id: 'open-project-settings',
+				id: 'open-usage',
 				label: 'Usage & Costs',
 				icon: CreditCardIcon,
 				action: () => navigate({ to: '/settings/usage' }),
