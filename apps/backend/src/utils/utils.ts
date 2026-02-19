@@ -1,7 +1,5 @@
 import { IncomingHttpHeaders } from 'node:http';
 
-import { env } from '../env';
-
 /** Convert fastify headers to basic `Headers` for better-auth. */
 export const convertHeaders = (headers: IncomingHttpHeaders) => {
 	const convertedHeaders = new Headers();
@@ -27,10 +25,9 @@ export const getErrorMessage = (error: unknown): string | null => {
 	return String(error);
 };
 
-export const isEmailDomainAllowed = (userEmail: string) => {
-	const googleAuthDomains = env.GOOGLE_AUTH_DOMAINS;
-	if (googleAuthDomains) {
-		const allowedDomains = googleAuthDomains.split(',').map((domain) => domain.trim().toLowerCase());
+export const isEmailDomainAllowed = (userEmail: string, authDomains?: string) => {
+	if (authDomains) {
+		const allowedDomains = authDomains.split(',').map((domain) => domain.trim().toLowerCase());
 		const userEmailDomain = userEmail.split('@').at(1)?.toLowerCase();
 		if (!userEmailDomain) {
 			return false;

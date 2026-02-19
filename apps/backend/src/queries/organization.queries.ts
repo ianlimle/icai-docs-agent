@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 import s, { DBOrganization, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
 import { db } from '../db/db';
+import { env } from '../env';
 import { OrgRole } from '../types/organization';
 import * as projectQueries from './project.queries';
 import * as userQueries from './user.queries';
@@ -57,6 +58,33 @@ export const getUserOrgMembership = async (
 export const getUserRoleInOrg = async (orgId: string, userId: string): Promise<OrgRole | null> => {
 	const member = await getOrgMember(orgId, userId);
 	return member?.role ?? null;
+};
+
+export const updateGoogleSettings = async (
+	orgId: string,
+	settings: {
+		googleClientId: string | null;
+		googleClientSecret: string | null;
+		googleAuthDomains: string | null;
+	},
+): Promise<DBOrganization> => {
+	const [updated] = await db
+		.update(s.organization)
+		.set(settings)
+		.where(eq(s.organization.id, orgId))
+		.returning()
+		.execute();
+	return updated;
+};
+
+export const getGoogleConfig = async () => {
+	const org = await getFirstOrganization();
+	return {
+		clientId: org?.googleClientId || env.GOOGLE_CLIENT_ID || '',
+		clientSecret: org?.googleClientSecret || env.GOOGLE_CLIENT_SECRET || '',
+		authDomains: org?.googleAuthDomains || env.GOOGLE_AUTH_DOMAINS || '',
+		usingDbOverride: !!(org?.googleClientId && org?.googleClientSecret),
+	};
 };
 
 export const getOrCreateDefaultOrganization = async (): Promise<DBOrganization> => {
