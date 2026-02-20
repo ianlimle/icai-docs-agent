@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { cn, hideIf } from '@/lib/utils';
 import { useChatListQuery } from '@/queries/use-chat-list-query';
 import { useSidebar } from '@/contexts/sidebar';
-import NaoLogoGreyscale from '@/components/icons/nao-logo-greyscale.svg';
 
 export function Sidebar() {
 	const chats = useChatListQuery();
@@ -51,7 +50,7 @@ export function Sidebar() {
 							hideIf(isCollapsed),
 						)}
 					>
-						<NaoLogoGreyscale className='size-5' />
+						<img src='/icai-logo.png' alt='ICAI Logo' className='h-5 w-auto' />
 					</div>
 
 					<Button

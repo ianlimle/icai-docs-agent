@@ -33,6 +33,92 @@ nao is a framework to build and deploy analytics agent. <br/>
 Create the context of your analytics agent with nao-core cli: data, metadata, modeling, rules, etc. <br/>
 Deploy a UI for anyone to chat with your agent and run analytics on your data.
 
+## 🏗️ Architecture: From RAG to Context Engineering
+
+nao represents the evolution beyond traditional **RAG (Retrieval-Augmented Generation)** to what we call **Context Engineering**.
+
+### Traditional RAG vs. Context Engineering
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Traditional RAG                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. Chunk documents → 2. Embed with vectors → 3. Store in Vector DB  │
+│                                                                       │
+│  Query → Embed → Similarity Search → Retrieve K Chunks → Generate     │
+│                                                                       │
+│  Challenges:                                                         │
+│  • Embedding costs at scale                                          │
+│  • Stale embeddings require re-indexing                             │
+│  • No semantic understanding during retrieval                       │
+│  • "Black box" retrieval process                                    │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                      nao: Context Engineering                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. Sync context to filesystem → 2. Agent explores with tools       │
+│                                                                       │
+│  Query → Agent Reasoning → Tool Use (read/search/grep) → Generate   │
+│                                                                       │
+│  Advantages:                                                         │
+│  ✅ No embedding costs or vector databases                          │
+│  ✅ Always up-to-date (read directly from source)                   │
+│  ✅ Exploratory - agent can iteratively search                     │
+│  ✅ Transparent reasoning - see what the agent reads               │
+│  ✅ Simpler infrastructure                                          │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### How It Works
+
+**Context as Files:**
+All context (database schemas, documentation, code, business rules) is stored as markdown files in the project folder:
+
+```
+project/
+├── databases/          # Database metadata (auto-synced)
+│   └── type=postgres/database=mydb/schema=public/table=users/
+│       ├── columns.md       # Schema definitions
+│       ├── preview.md       # Sample data
+│       └── description.md   # Table documentation
+├── repos/              # Git repositories (cloned as files)
+├── docs/               # Documentation (Notion exports)
+├── semantics/          # Business rules and definitions
+└── agent/              # Custom tools and skills
+```
+
+**Tool-Based Retrieval:**
+
+Instead of pre-indexed vector similarity, the agent actively searches using tools:
+
+| Tool          | Purpose                         | Implementation            |
+| ------------- | ------------------------------- | ------------------------- |
+| `read`        | Read file contents              | Node.js `fs.readFile()`   |
+| `search`      | Find files by glob pattern      | `glob()` pattern matching |
+| `grep`        | Search file contents with regex | `ripgrep` binary          |
+| `list`        | List directory contents         | Node.js `fs.readdir()`    |
+| `execute_sql` | Query databases directly        | Ibis ORM connection       |
+
+**Example Flow:**
+
+```
+User: "What's our customer churn rate?"
+
+Agent Thinking:
+1. I need to find customer-related tables
+2. Use `search` tool with pattern "**/database=*/schema=*/table=*customer*"
+3. Read `columns.md` files to understand schema
+4. Use `execute_sql` to calculate churn
+5. Generate response with SQL and results
+```
+
+This approach puts the **intelligence in the agent** rather than pre-computed retrieval, enabling more flexible and context-aware responses.
+
 ## Key Features
 
 For **data teams**:

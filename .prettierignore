@@ -6,6 +6,8 @@ bun.lock
 cli/
 example/
 .pytest_cache/
+.venv/
+icao-annexes/
 
 # Backend
 migrations-sqlite/

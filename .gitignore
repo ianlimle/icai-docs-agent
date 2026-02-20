@@ -16,4 +16,4 @@ nao-chat-server
 
 *.pyc
 
-rsa_key.*
+rsa_key.*icao-annexes/

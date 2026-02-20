@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { handleGoogleSignIn } from '@/lib/auth-client';
 import GoogleIcon from '@/components/icons/google-icon.svg';
-import NaoLogo from '@/components/icons/nao-logo-greyscale.svg';
 
 interface AuthFormProps {
 	form: any;
@@ -20,7 +19,7 @@ export function AuthForm({ form, title, submitText, children, serverError }: Aut
 	return (
 		<div className='mx-auto w-full max-w-md p-8 my-auto'>
 			<div className='flex flex-col items-center mb-8'>
-				<NaoLogo className='w-12 h-12 mb-4' />
+				<img src='/icai-logo.png' alt='ICAI Logo' className='w-auto h-12 mb-4' />
 				<h1 className='text-2xl font-semibold'>{title}</h1>
 			</div>
 
