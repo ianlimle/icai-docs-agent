@@ -6,7 +6,7 @@ import { createRuntime, type Runtime, ServerDefinition, ServerToolInfo } from 'm
 import { join } from 'path';
 
 import { mcpJsonSchema, McpServerConfig, McpServerState } from '../types/mcp';
-import { retrieveProjectById } from '../utils/chat';
+import { retrieveProjectById } from '../utils/ai';
 import { prefixToolName, removePrefixToolName, sanitizeTools } from '../utils/tools';
 import { replaceEnvVars } from '../utils/utils';
 
@@ -134,7 +134,6 @@ export class McpService {
 				await this._listTools(serverName);
 				return { serverName, success: true };
 			} catch (error) {
-				console.error(`[mcp] Failed to connect to ${serverName}:`, error);
 				this._failedConnections[serverName] = (error as Error).message;
 			}
 		});

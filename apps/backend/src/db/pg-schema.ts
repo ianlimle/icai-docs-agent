@@ -18,6 +18,7 @@ import { StopReason, ToolState, UIMessagePartType } from '../types/chat';
 import { LlmProvider } from '../types/llm';
 import { ORG_ROLES } from '../types/organization';
 import { USER_ROLES } from '../types/project';
+import { MEMORY_CATEGORIES } from '../utils/memory';
 
 export const user = pgTable('user', {
 	id: text('id').primaryKey(),
@@ -335,4 +336,25 @@ export const projectSavedPrompt = pgTable(
 			.notNull(),
 	},
 	(t) => [index('project_saved_prompt_projectId_idx').on(t.projectId)],
+);
+
+export const memories = pgTable(
+	'memories',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		content: text('content').notNull(),
+		category: text('category', { enum: MEMORY_CATEGORIES }).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at')
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+		chatId: text('chat_id').references(() => chat.id, { onDelete: 'set null' }),
+	},
+	(t) => [index('memories_userId_idx').on(t.userId), index('memories_chatId_idx').on(t.chatId)],
 );
