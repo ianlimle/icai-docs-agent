@@ -65,7 +65,9 @@ export const retrieveProjectById = async (projectId: string): Promise<DBProject>
 	return project;
 };
 
-export const findLastUserMessage = (messages: UIMessage[]): [UIMessage, number] | [undefined, undefined] => {
+export const findLastUserMessage = (
+	messages: UIMessage[],
+): [message: UIMessage, idx: number] | [undefined, undefined] => {
 	for (let i = messages.length - 1; i >= 0; i--) {
 		if (messages[i].role === 'user') {
 			return [messages[i], i];
@@ -86,3 +88,7 @@ export const getLastUserMessageText = (messages: UIMessage[]): string => {
 export function estimateTokens(text: string): number {
 	return Math.ceil(text.length / 4);
 }
+
+export const createChatTitle = ({ text }: { text: string }) => {
+	return text.slice(0, 64);
+};
