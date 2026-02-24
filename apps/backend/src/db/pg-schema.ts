@@ -28,6 +28,7 @@ export const user = pgTable('user', {
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
 	requiresPasswordReset: boolean('requires_password_reset').default(false).notNull(),
+	memoryEnabled: boolean('memory_enabled').default(true).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at')
 		.defaultNow()
@@ -197,6 +198,7 @@ export const chatMessage = pgTable(
 		errorMessage: text('error_message'),
 		llmProvider: text('llm_provider').$type<LlmProvider>(),
 		llmModelId: text('llm_model_id'),
+		supersededAt: timestamp('superseded_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 
 		// Token usage columns

@@ -11,14 +11,14 @@ import {
 	ToolLoopAgentSettings,
 } from 'ai';
 
-import { CACHE_1H, CACHE_5M, createProviderModel } from '../agents/providers';
+import { CACHE_1H, CACHE_5M } from '../agents/providers';
 import { getTools } from '../agents/tools';
 import { SystemPrompt } from '../components/system-prompt';
 import { renderToMarkdown } from '../lib/markdown';
 import * as chatQueries from '../queries/chat.queries';
 import * as projectQueries from '../queries/project.queries';
 import * as llmConfigQueries from '../queries/project-llm-config.queries';
-import { Mention, TokenCost, TokenUsage, UIChat, UIMessage } from '../types/chat';
+import { Mention, MessageCustomDataParts, TokenCost, TokenUsage, UIChat, UIMessage } from '../types/chat';
 import { ToolContext } from '../types/tools';
 import {
 	convertToCost,
@@ -27,7 +27,8 @@ import {
 	getLastUserMessageText,
 	retrieveProjectById,
 } from '../utils/ai';
-import { getDefaultModelId, getEnvApiKey, getEnvModelSelections, ModelSelection } from '../utils/llm';
+import { HandlerError } from '../utils/error';
+import { getDefaultModelId, getEnvModelSelections, ModelSelection, resolveProviderModel } from '../utils/llm';
 import { memoryService } from './memory';
 import { skillService } from './skill.service';
 import { setCurrentStageTracker } from './stage-tracker.service';
@@ -60,11 +61,7 @@ type AgentChat = UIChat & {
 export class AgentService {
 	private _agents = new Map<string, AgentManager>();
 
-	async create(
-		chat: AgentChat,
-		abortController: AbortController,
-		modelSelection?: ModelSelection,
-	): Promise<AgentManager> {
+	async create(chat: AgentChat, modelSelection?: ModelSelection): Promise<AgentManager> {
 		this._disposeAgent(chat.id);
 		const resolvedModelSelection = await this._getResolvedModelSelection(chat.projectId, modelSelection);
 		const modelConfig = await this._getModelConfig(chat.projectId, resolvedModelSelection);
@@ -76,7 +73,7 @@ export class AgentService {
 			modelConfig,
 			resolvedModelSelection,
 			() => this._agents.delete(chat.id),
-			abortController,
+			new AbortController(),
 			agentTools,
 			toolContext,
 		);
@@ -108,13 +105,13 @@ export class AgentService {
 			return envSelection;
 		}
 
-		throw Error('No model config found');
+		throw new HandlerError('BAD_REQUEST', 'No model config found');
 	}
 
 	private async _getToolContext(projectId: string): Promise<ToolContext> {
 		const project = await retrieveProjectById(projectId);
 		if (!project.path) {
-			throw Error('Project path does not exist.');
+			throw new HandlerError('BAD_REQUEST', 'Project path does not exist.');
 		}
 		return {
 			projectFolder: project.path ?? '',
@@ -138,26 +135,11 @@ export class AgentService {
 		projectId: string,
 		modelSelection: ModelSelection,
 	): Promise<Pick<ToolLoopAgentSettings, 'model' | 'providerOptions'>> {
-		const config = await llmConfigQueries.getProjectLlmConfigByProvider(projectId, modelSelection.provider);
-
-		if (config) {
-			return createProviderModel(
-				modelSelection.provider,
-				{
-					apiKey: config.apiKey,
-					...(config.baseUrl && { baseURL: config.baseUrl }),
-				},
-				modelSelection.modelId,
-			);
+		const result = await resolveProviderModel(projectId, modelSelection.provider, modelSelection.modelId);
+		if (!result) {
+			throw new HandlerError('BAD_REQUEST', 'The selected model could not be resolved.');
 		}
-
-		// No config but env var might exist - use it
-		const envApiKey = getEnvApiKey(modelSelection.provider);
-		if (envApiKey) {
-			return createProviderModel(modelSelection.provider, { apiKey: envApiKey }, modelSelection.modelId);
-		}
-
-		throw Error('No model config found');
+		return result;
 	}
 }
 
@@ -188,31 +170,33 @@ class AgentManager {
 	stream(
 		uiMessages: UIMessage[],
 		opts: {
-			sendNewChatData: boolean;
+			events?: Partial<MessageCustomDataParts>;
 			mentions?: Mention[];
-		},
+		} = {},
 	): ReadableStream<InferUIMessageChunk<UIMessage>> {
 		let error: unknown = undefined;
 		let result: StreamTextResult<AgentTools, never>;
 		const stageTracker = createStageTracker();
 		const requestStartTime = performance.now();
 		let firstTokenTime: number | undefined;
-
 		return createUIMessageStream<UIMessage>({
 			generateId: () => crypto.randomUUID(),
 			execute: async ({ writer }) => {
 				// Set current stage tracker for this async context
 				setCurrentStageTracker(stageTracker);
 
-				if (opts.sendNewChatData) {
+				if (opts.events?.newChat) {
 					writer.write({
 						type: 'data-newChat',
-						data: {
-							id: this.chat.id,
-							title: this.chat.title,
-							createdAt: this.chat.createdAt,
-							updatedAt: this.chat.updatedAt,
-						},
+						data: opts.events.newChat,
+					});
+				}
+
+				if (opts.events?.newUserMessage) {
+					writer.write({
+						type: 'data-newUserMessage',
+						data: opts.events.newUserMessage,
+						transient: true,
 					});
 				}
 
@@ -286,7 +270,8 @@ class AgentManager {
 					},
 				});
 
-				await chatQueries.upsertMessage(e.responseMessage, {
+				await chatQueries.upsertMessage({
+					...e.responseMessage,
 					chatId: this.chat.id,
 					stopReason,
 					error,
@@ -323,7 +308,7 @@ class AgentManager {
 		uiMessages = this._addSkills(uiMessages, mentions);
 		uiMessages = this._fillEmptyAssistantTurns(uiMessages, '[NO CONTENT]');
 		const modelMessages = await convertToModelMessages(uiMessages);
-		const memories = await memoryService.safeGetUserMemories(this.chat.userId, this.chat.id);
+		const memories = await memoryService.safeGetUserMemories(this.chat.userId, this.chat.projectId, this.chat.id);
 		const systemPrompt = renderToMarkdown(SystemPrompt({ memories }));
 		const systemMessage: ModelMessage = { role: 'system', content: systemPrompt };
 		modelMessages.unshift(systemMessage);
@@ -344,8 +329,12 @@ class AgentManager {
 	}
 
 	private async _getTotalUsage(
-		result: StreamTextResult<ReturnType<typeof getTools>, never>,
+		result: StreamTextResult<ReturnType<typeof getTools>, never> | undefined,
 	): Promise<TokenUsage | undefined> {
+		if (!result) {
+			return undefined;
+		}
+
 		try {
 			// totalUsage promise will throw if an error occured during the streaming
 			return convertToTokenUsage(await result.totalUsage);

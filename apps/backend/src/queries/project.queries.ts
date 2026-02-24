@@ -15,6 +15,19 @@ export const getProjectById = async (id: string): Promise<DBProject | null> => {
 	return project ?? null;
 };
 
+export const getProjectMemoryEnabled = async (projectId: string): Promise<boolean> => {
+	const [project] = await db
+		.select({ agentSettings: s.project.agentSettings })
+		.from(s.project)
+		.where(eq(s.project.id, projectId))
+		.execute();
+	return project?.agentSettings?.memoryEnabled ?? true;
+};
+
+export const setProjectMemoryEnabled = async (projectId: string, memoryEnabled: boolean): Promise<void> => {
+	await updateAgentSettings(projectId, { memoryEnabled });
+};
+
 export const createProject = async (project: NewProject): Promise<DBProject> => {
 	const [created] = await db.insert(s.project).values(project).returning().execute();
 	return created;
@@ -91,7 +104,7 @@ export const getDefaultProject = async (): Promise<DBProject | null> => {
 	return getProjectByPath(projectPath);
 };
 
-export const checkUserHasProject = async (userId: string): Promise<DBProject | null> => {
+export const getProjectByUserId = async (userId: string): Promise<DBProject | null> => {
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 	if (!projectPath) {
 		return null;
@@ -123,8 +136,17 @@ export const getAgentSettings = async (projectId: string): Promise<AgentSettings
 };
 
 export const updateAgentSettings = async (projectId: string, settings: AgentSettings): Promise<AgentSettings> => {
-	await db.update(s.project).set({ agentSettings: settings }).where(eq(s.project.id, projectId)).execute();
-	return settings;
+	const current = (await getAgentSettings(projectId)) ?? {};
+	const next: AgentSettings = {
+		...current,
+		...settings,
+		experimental: {
+			...current.experimental,
+			...settings.experimental,
+		},
+	};
+	await db.update(s.project).set({ agentSettings: next }).where(eq(s.project.id, projectId)).execute();
+	return next;
 };
 
 export const getEnabledToolsAndKnownServers = async (

@@ -11,6 +11,7 @@ import { skillRoutes } from './skill.routes';
 import { systemRoutes } from './system.routes';
 import { telemetryRoutes } from './telemetry.routes';
 import { toolAnalyticsRoutes } from './tool-analytics.routes';
+import { transcribeRoutes } from './transcribe.routes';
 import { router } from './trpc';
 import { usageRoutes } from './usage.routes';
 import { userRoutes } from './user.routes';
@@ -31,6 +32,7 @@ export const trpcRouter = router({
 	telemetry: telemetryRoutes,
 	toolAnalytics: toolAnalyticsRoutes,
 	conversationAnalytics: conversationAnalyticsRoutes,
+	transcribe: transcribeRoutes,
 });
 
 export type TrpcRouter = typeof trpcRouter;

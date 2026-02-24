@@ -1,14 +1,13 @@
 import { generateText, ModelMessage, Output } from 'ai';
 import { z } from 'zod/v4';
 
-import { createProviderModel, LLM_PROVIDERS } from '../agents/providers';
+import { LLM_PROVIDERS, type ProviderModelResult } from '../agents/providers';
 import { DBMemory, DBNewMemory } from '../db/abstractSchema';
 import { renderToMarkdown, XML } from '../lib/markdown';
 import * as memoryQueries from '../queries/memory';
-import * as llmConfigQueries from '../queries/project-llm-config.queries';
 import { LlmProvider } from '../types/llm';
 import { MemoryExtractionOptions, UserMemory } from '../types/memory';
-import { getEnvApiKey } from '../utils/llm';
+import { resolveProviderModel } from '../utils/llm';
 import { MEMORY_CATEGORIES } from '../utils/memory';
 
 /**
@@ -17,8 +16,12 @@ import { MEMORY_CATEGORIES } from '../utils/memory';
  */
 class MemoryService {
 	/** Safely gets active memories for a user to be injected into the system prompt. */
-	public async safeGetUserMemories(userId: string, excludeChatId?: string): Promise<UserMemory[]> {
+	public async safeGetUserMemories(userId: string, projectId: string, excludeChatId?: string): Promise<UserMemory[]> {
 		try {
+			const isEnabled = await this._isMemoryEnabled(userId, projectId);
+			if (!isEnabled) {
+				return [];
+			}
 			const memories = await memoryQueries.getUserMemories(userId, excludeChatId);
 			return memories.map((memory) => ({
 				category: memory.category,
@@ -37,9 +40,19 @@ class MemoryService {
 		});
 	}
 
+	/** Normalizes memory content for persistence and user edits. */
+	public normalizeMemoryContent(content: string): string {
+		return this._normalizeMemoryContent(content);
+	}
+
 	private async _extractMemory(opts: MemoryExtractionOptions): Promise<void> {
 		const userMessage = opts.userMessage.trim();
 		if (!userMessage || userMessage.length < 6) {
+			return;
+		}
+
+		const isEnabled = await this._isMemoryEnabled(opts.userId, opts.projectId);
+		if (!isEnabled) {
 			return;
 		}
 
@@ -65,25 +78,8 @@ class MemoryService {
 		projectId: string,
 		provider: LlmProvider,
 		modelId: string,
-	): Promise<ReturnType<typeof createProviderModel> | null> {
-		const config = await llmConfigQueries.getProjectLlmConfigByProvider(projectId, provider);
-		if (config) {
-			return createProviderModel(
-				provider,
-				{
-					apiKey: config.apiKey,
-					...(config.baseUrl && { baseURL: config.baseUrl }),
-				},
-				modelId,
-			);
-		}
-
-		const envApiKey = getEnvApiKey(provider);
-		if (envApiKey) {
-			return createProviderModel(provider, { apiKey: envApiKey }, modelId);
-		}
-
-		return null;
+	): Promise<ProviderModelResult | null> {
+		return resolveProviderModel(projectId, provider, modelId);
 	}
 
 	private _getExtractorModelId(provider: LlmProvider): string {
@@ -124,12 +120,16 @@ class MemoryService {
 		}
 		return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 	}
+
+	private async _isMemoryEnabled(userId: string, projectId: string): Promise<boolean> {
+		return memoryQueries.getIsMemoryEnabledForUserAndProject(userId, projectId);
+	}
 }
 
 const MemorySchema = z.object({
-	id: z.string().optional(),
-	content: z.string().min(1),
-	category: z.enum(MEMORY_CATEGORIES),
+	id: z.string().nullable().describe('The id of the memory. Provide `null` for new memories.'),
+	content: z.string().min(1).describe('The content of the memory.'),
+	category: z.enum(MEMORY_CATEGORIES).describe('The category of the memory.'),
 });
 
 type Memory = z.infer<typeof MemorySchema>;
@@ -142,7 +142,7 @@ Return the complete, updated memory list. For each memory you can:
 - Keep it unchanged — include it with its original id
 - Update its content — include it with its original id and the new content
 - Delete it — omit it from the returned list
-- Add a new one — include it without an id
+- Add a new one — include it and provide \`null\` for the id field
 - Merge two related memories into one — keep one id, drop the other, combine their content
 
 Write each memory as a direct instruction to the agent, not as a fact about the user.
@@ -160,6 +160,7 @@ Do NOT include:
 - Emotional reactions or pleasantries
 - Anything only relevant to this conversation
 - Instructions that are only relevant to a specific case
+- Facts about the user that are too specific or not important enough.
 
 Merge memories whenever they clearly overlap or are redundant — prefer fewer, broader directives over many narrow ones. For example, if two memories both concern response language, combine them into a single instruction.
 
@@ -170,7 +171,7 @@ If nothing meaningful changed, return the existing memories unchanged.`;
  * the full reconciled memory list (additions, updates, deletions, merges).
  */
 class MemoryExtractorLLM {
-	constructor(private readonly model: ReturnType<typeof createProviderModel>) {}
+	constructor(private readonly model: ProviderModelResult) {}
 
 	async extract(memories: DBMemory[], userMessage: string): Promise<Memory[]> {
 		const { output } = await generateText({
