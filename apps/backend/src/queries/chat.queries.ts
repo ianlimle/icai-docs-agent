@@ -160,6 +160,11 @@ export const upsertMessage = async (
 		tokenUsage?: TokenUsage;
 		llmProvider?: LlmProvider;
 		llmModelId?: string;
+		telemetry?: {
+			ttftMs?: number;
+			totalLatencyMs?: number;
+			estimatedCost?: number;
+		};
 	},
 ): Promise<void> => {
 	await db.transaction(async (t) => {
@@ -174,6 +179,9 @@ export const upsertMessage = async (
 				llmProvider: opts.llmProvider,
 				llmModelId: opts.llmModelId,
 				...opts.tokenUsage,
+				ttftMs: opts.telemetry?.ttftMs,
+				totalLatencyMs: opts.telemetry?.totalLatencyMs,
+				estimatedCost: opts.telemetry?.estimatedCost,
 			})
 			.onConflictDoNothing({ target: s.chatMessage.id })
 			.execute();

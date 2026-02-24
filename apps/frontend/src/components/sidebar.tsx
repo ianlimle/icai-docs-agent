@@ -50,7 +50,25 @@ export function Sidebar() {
 							hideIf(isCollapsed),
 						)}
 					>
-						<img src='/icai-logo.png' alt='ICAI Logo' className='h-5 w-auto' />
+						<img
+							src='/icai-logo.png'
+							alt='ICAI Logo'
+							className='h-6 w-auto dark:brightness-100 dark:invert-0 brightness-0 invert'
+						/>
+					</div>
+
+					{/* Show smaller logo when collapsed */}
+					<div
+						className={cn(
+							'flex items-center justify-center absolute left-1/2 -translate-x-1/2 transition-[opacity,visibility] duration-300',
+							!isCollapsed && 'opacity-0 invisible',
+						)}
+					>
+						<img
+							src='/icai-logo.png'
+							alt='ICAI Logo'
+							className='h-5 w-auto dark:brightness-100 dark:invert-0 brightness-0 invert'
+						/>
 					</div>
 
 					<Button

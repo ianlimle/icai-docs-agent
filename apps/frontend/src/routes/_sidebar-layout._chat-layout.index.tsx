@@ -28,7 +28,7 @@ function RouteComponent() {
 						<img
 							src='/icai-logo.png'
 							alt='ICAI Logo'
-							className='w-[150px] h-auto select-none opacity-[0.05]'
+							className='w-[150px] h-auto select-none dark:opacity-[0.03] dark:invert-0 opacity-100 brightness-0 invert'
 						/>
 						<div className='text-2xl md:text-2xl tracking-tight text-muted-foreground text-center px-6'>
 							{username ? capitalize(username) : ''}, what do you want to analyze?

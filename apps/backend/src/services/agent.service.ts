@@ -30,6 +30,8 @@ import {
 import { getDefaultModelId, getEnvApiKey, getEnvModelSelections, ModelSelection } from '../utils/llm';
 import { memoryService } from './memory';
 import { skillService } from './skill.service';
+import { setCurrentStageTracker } from './stage-tracker.service';
+import { createStageTracker } from './stage-tracker.service';
 
 export type { ModelSelection };
 type AgentTools = Awaited<ReturnType<typeof getTools>>;
@@ -192,10 +194,16 @@ class AgentManager {
 	): ReadableStream<InferUIMessageChunk<UIMessage>> {
 		let error: unknown = undefined;
 		let result: StreamTextResult<AgentTools, never>;
+		const stageTracker = createStageTracker();
+		const requestStartTime = performance.now();
+		let firstTokenTime: number | undefined;
 
 		return createUIMessageStream<UIMessage>({
 			generateId: () => crypto.randomUUID(),
 			execute: async ({ writer }) => {
+				// Set current stage tracker for this async context
+				setCurrentStageTracker(stageTracker);
+
 				if (opts.sendNewChatData) {
 					writer.write({
 						type: 'data-newChat',
@@ -210,6 +218,12 @@ class AgentManager {
 
 				const messages = await this._buildModelMessages(uiMessages, opts.mentions);
 
+				// Start answer generation stage
+				stageTracker.startStage('answer_generation', {
+					providerId: this._modelSelection.provider,
+					modelId: this._modelSelection.modelId,
+				});
+
 				result = await this._agent.stream({
 					messages,
 					abortSignal: this._abortController.signal,
@@ -218,15 +232,60 @@ class AgentManager {
 				// Extract memory immediately after the request to the agent is sent
 				this._scheduleMemoryExtraction(uiMessages);
 
-				writer.merge(result.toUIMessageStream({}));
+				// Wrap the stream to capture first token time
+				const originalStream = result.toUIMessageStream({});
+				const streamWithTelemetry = new TransformStream({
+					transform(chunk, controller) {
+						// Capture first token time
+						if (!firstTokenTime && chunk !== null && typeof chunk === 'object') {
+							// Check if this chunk contains actual content
+							const hasContent =
+								chunk.type === 'text-delta' ||
+								chunk.type === 'tool-call-delta' ||
+								(chunk.type === 'reasoning-delta' && chunk.delta?.length > 0);
+							if (hasContent) {
+								firstTokenTime = performance.now();
+							}
+						}
+						controller.enqueue(chunk);
+					},
+				});
+
+				writer.merge(originalStream.pipeThrough(streamWithTelemetry));
 			},
 			onError: (err) => {
 				error = err;
+				stageTracker.completeStage('answer_generation', {
+					success: false,
+					error: String(err),
+				});
+				setCurrentStageTracker(undefined);
 				return String(err);
 			},
 			onFinish: async (e) => {
+				const totalLatencyMs = Math.round(performance.now() - requestStartTime);
+				const ttftMs = firstTokenTime ? Math.round(firstTokenTime - requestStartTime) : undefined;
+
 				const stopReason = e.isAborted ? 'interrupted' : e.finishReason;
 				const tokenUsage = await this._getTotalUsage(result);
+
+				// Calculate estimated cost
+				let estimatedCost: number | undefined;
+				if (tokenUsage) {
+					const cost = convertToCost(tokenUsage, this._modelSelection.provider, this._modelSelection.modelId);
+					// Convert to micro-units (cost * 1,000,000) for integer storage
+					estimatedCost = Math.round((cost.totalCost || 0) * 1_000_000);
+				}
+
+				// Complete answer generation stage
+				stageTracker.completeStage('answer_generation', {
+					success: !error,
+					metadata: {
+						totalTokens: tokenUsage?.totalTokens,
+						finishReason: stopReason,
+					},
+				});
+
 				await chatQueries.upsertMessage(e.responseMessage, {
 					chatId: this.chat.id,
 					stopReason,
@@ -234,7 +293,23 @@ class AgentManager {
 					tokenUsage,
 					llmProvider: this._modelSelection.provider,
 					llmModelId: this._modelSelection.modelId,
+					telemetry: {
+						ttftMs,
+						totalLatencyMs,
+						estimatedCost,
+					},
 				});
+
+				// Persist stage telemetry asynchronously (don't block)
+				const messageId = e.responseMessage.id;
+				stageTracker
+					.persist(messageId)
+					.finally(() => {
+						setCurrentStageTracker(undefined);
+					})
+					.catch((err) => {
+						console.error('[AgentManager] Failed to persist stage telemetry:', err);
+					});
 
 				this._onDispose();
 			},

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Copy, Check, BarChart3 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { NegativeFeedbackDialog } from './chat-negative-feedback-dialog';
+import { MessageTelemetryDialog } from './message-telemetry-dialog';
 import type { UIMessage } from '@nao/backend/chat';
 import { Button } from '@/components/ui/button';
 import { serializeMessageForCopy } from '@/lib/messages.utils';
@@ -16,6 +17,7 @@ interface MessageActionsProps {
 
 export function MessageActions({ message, className, chatId }: MessageActionsProps) {
 	const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+	const [showTelemetryDialog, setShowTelemetryDialog] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	const submitFeedback = useMutation(
@@ -101,6 +103,18 @@ export function MessageActions({ message, className, chatId }: MessageActionsPro
 				>
 					{copied ? <Check className='size-4' /> : <Copy className='size-4' />}
 				</Button>
+
+				{message.role === 'assistant' && (
+					<Button
+						variant='ghost'
+						size='icon-sm'
+						onClick={() => setShowTelemetryDialog(true)}
+						className='opacity-50 hover:opacity-100'
+						aria-label='View telemetry'
+					>
+						<BarChart3 className='size-4' />
+					</Button>
+				)}
 			</div>
 
 			<NegativeFeedbackDialog
@@ -109,6 +123,14 @@ export function MessageActions({ message, className, chatId }: MessageActionsPro
 				onSubmit={handleNegativeFeedbackSubmit}
 				isPending={submitFeedback.isPending}
 			/>
+
+			{message.role === 'assistant' && (
+				<MessageTelemetryDialog
+					open={showTelemetryDialog}
+					onOpenChange={setShowTelemetryDialog}
+					messageId={message.id}
+				/>
+			)}
 		</>
 	);
 }

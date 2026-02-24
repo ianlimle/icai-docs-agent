@@ -1,5 +1,7 @@
 import { accountRoutes } from './account.routes';
+import { analyticsRoutes } from './analytics.routes';
 import { chatRoutes } from './chat.routes';
+import { conversationAnalyticsRoutes } from './conversation-analytics.routes';
 import { feedbackRoutes } from './feedback.routes';
 import { googleRoutes } from './google.routes';
 import { mcpRoutes } from './mcp.routes';
@@ -7,11 +9,14 @@ import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
 import { skillRoutes } from './skill.routes';
 import { systemRoutes } from './system.routes';
+import { telemetryRoutes } from './telemetry.routes';
+import { toolAnalyticsRoutes } from './tool-analytics.routes';
 import { router } from './trpc';
 import { usageRoutes } from './usage.routes';
 import { userRoutes } from './user.routes';
 
 export const trpcRouter = router({
+	analytics: analyticsRoutes,
 	chat: chatRoutes,
 	feedback: feedbackRoutes,
 	posthog: posthogRoutes,
@@ -23,6 +28,9 @@ export const trpcRouter = router({
 	mcp: mcpRoutes,
 	system: systemRoutes,
 	skill: skillRoutes,
+	telemetry: telemetryRoutes,
+	toolAnalytics: toolAnalyticsRoutes,
+	conversationAnalytics: conversationAnalyticsRoutes,
 });
 
 export type TrpcRouter = typeof trpcRouter;

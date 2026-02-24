@@ -7,6 +7,7 @@ import { StopReason, ToolState, UIMessagePartType } from '../types/chat';
 import { LlmProvider } from '../types/llm';
 import { ORG_ROLES } from '../types/organization';
 import { USER_ROLES } from '../types/project';
+import { STAGE_STATUS, STAGE_TYPES, StageMetadata } from '../types/stage-telemetry';
 import { MEMORY_CATEGORIES } from '../utils/memory';
 
 export const user = sqliteTable('user', {
@@ -219,10 +220,39 @@ export const chatMessage = sqliteTable(
 		outputTextTokens: integer('output_text_tokens'),
 		outputReasoningTokens: integer('output_reasoning_tokens'),
 		totalTokens: integer('total_tokens'),
+
+		// Telemetry columns
+		ttftMs: integer('ttft_ms'), // Time to first token in milliseconds
+		totalLatencyMs: integer('total_latency_ms'), // End-to-end latency in milliseconds
+		estimatedCost: integer('estimated_cost'), // Estimated cost in micro-units (cost * 1,000,000)
 	},
 	(table) => [
 		index('chat_message_chatId_idx').on(table.chatId),
 		index('chat_message_createdAt_idx').on(table.createdAt),
+	],
+);
+
+export const stageTelemetry = sqliteTable(
+	'stage_telemetry',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		messageId: text('message_id')
+			.notNull()
+			.references(() => chatMessage.id, { onDelete: 'cascade' }),
+		stage: text('stage', { enum: STAGE_TYPES }).notNull(),
+		status: text('status', { enum: STAGE_STATUS }).notNull(),
+		durationMs: integer('duration_ms'),
+		errorMessage: text('error_message'),
+		metadata: text('metadata', { mode: 'json' }).$type<StageMetadata>(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		index('stage_telemetry_message_id_idx').on(table.messageId),
+		index('stage_telemetry_stage_idx').on(table.stage),
 	],
 );
 
@@ -384,4 +414,36 @@ export const memories = sqliteTable(
 		chatId: text('chat_id').references(() => chat.id, { onDelete: 'set null' }),
 	},
 	(t) => [index('memories_userId_idx').on(t.userId), index('memories_chatId_idx').on(t.chatId)],
+);
+
+/**
+ * Error tracking table for monitoring and alerting
+ * Separate from stage_telemetry for easier querying and alerting
+ */
+export const errors = sqliteTable(
+	'errors',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		messageId: text('message_id')
+			.notNull()
+			.references(() => chatMessage.id, { onDelete: 'cascade' }),
+		stage: text('stage', { enum: STAGE_TYPES }).notNull(),
+		errorType: text('error_type').notNull(), // e.g., 'timeout', 'rate_limit', 'validation', 'execution'
+		errorMessage: text('error_message').notNull(),
+		severity: text('severity', { enum: ['low', 'medium', 'high', 'critical'] }).notNull(),
+		metadata: text('metadata', { mode: 'json' }).$type<Record<string, unknown>>(),
+		resolvedAt: integer('resolved_at', { mode: 'timestamp_ms' }),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(t) => [
+		index('errors_message_id_idx').on(t.messageId),
+		index('errors_stage_idx').on(t.stage),
+		index('errors_severity_idx').on(t.severity),
+		index('errors_created_at_idx').on(t.createdAt),
+		index('errors_error_type_idx').on(t.errorType),
+	],
 );

@@ -7,6 +7,7 @@ import { ToolCallsGroup } from './tool-calls/tool-calls-group';
 import { ReasoningAccordion } from './chat-message-reasoning-accordion';
 import { TextShimmer } from './ui/text-shimmer';
 import { MessageActions } from './chat-message-actions';
+import { ChatMessageTelemetry } from './chat-message-telemetry';
 import { ChatError } from './chat-error';
 import { FollowUpSuggestions } from './chat-follow-up-suggestions';
 import type { UIMessage } from '@nao/backend/chat';
@@ -237,14 +238,24 @@ const AssistantMessageBlock = ({
 			{showResponseLoader && <TextShimmer />}
 
 			{chatId && (
-				<MessageActions
-					message={message}
-					chatId={chatId}
-					className={cn(
-						'opacity-0 group-last/message:opacity-100 group-hover:opacity-100 transition-opacity duration-200',
-						isRunning ? 'group-last/message:hidden' : '',
-					)}
-				/>
+				<>
+					<MessageActions
+						message={message}
+						chatId={chatId}
+						className={cn(
+							'opacity-0 group-last/message:opacity-100 group-hover:opacity-100 transition-opacity duration-200',
+							isRunning ? 'group-last/message:hidden' : '',
+						)}
+					/>
+					<ChatMessageTelemetry
+						messageId={message.id}
+						className={cn(
+							'mt-2',
+							isRunning ? 'hidden' : '',
+							'opacity-0 group-last/message:opacity-100 group-hover:opacity-100 transition-opacity duration-200',
+						)}
+					/>
+				</>
 			)}
 		</div>
 	);

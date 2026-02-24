@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
+	BarChart3,
 	CreditCardIcon,
 	MessageSquareIcon,
 	MessageSquarePlusIcon,
@@ -81,6 +82,14 @@ export function CommandMenu() {
 				label: 'Usage & Costs',
 				icon: CreditCardIcon,
 				action: () => navigate({ to: '/settings/usage' }),
+				group: 'Jump to',
+				visible: project.data?.userRole === 'admin',
+			},
+			{
+				id: 'open-analytics',
+				label: 'Analytics Dashboard',
+				icon: BarChart3,
+				action: () => navigate({ to: '/settings/analytics' }),
 				group: 'Jump to',
 				visible: project.data?.userRole === 'admin',
 			},

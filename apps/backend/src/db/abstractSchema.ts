@@ -45,4 +45,7 @@ export type NewProjectSavedPrompt = typeof sqliteSchema.projectSavedPrompt.$infe
 export type DBMemory = typeof sqliteSchema.memories.$inferSelect;
 export type DBNewMemory = typeof sqliteSchema.memories.$inferInsert;
 
+export type DBStageTelemetry = typeof sqliteSchema.stageTelemetry.$inferSelect;
+export type NewStageTelemetry = typeof sqliteSchema.stageTelemetry.$inferInsert;
+
 export default allSchema as typeof sqliteSchema;

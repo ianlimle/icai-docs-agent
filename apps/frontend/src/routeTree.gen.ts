@@ -20,6 +20,7 @@ import { Route as SidebarLayoutSettingsUsageRouteImport } from './routes/_sideba
 import { Route as SidebarLayoutSettingsProjectRouteImport } from './routes/_sidebar-layout.settings.project'
 import { Route as SidebarLayoutSettingsProfileRouteImport } from './routes/_sidebar-layout.settings.profile'
 import { Route as SidebarLayoutSettingsAppearanceRouteImport } from './routes/_sidebar-layout.settings.appearance'
+import { Route as SidebarLayoutSettingsAnalyticsRouteImport } from './routes/_sidebar-layout.settings.analytics'
 import { Route as SidebarLayoutChatLayoutChatIdRouteImport } from './routes/_sidebar-layout._chat-layout.$chatId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -81,6 +82,12 @@ const SidebarLayoutSettingsAppearanceRoute =
     path: '/appearance',
     getParentRoute: () => SidebarLayoutSettingsRoute,
   } as any)
+const SidebarLayoutSettingsAnalyticsRoute =
+  SidebarLayoutSettingsAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => SidebarLayoutSettingsRoute,
+  } as any)
 const SidebarLayoutChatLayoutChatIdRoute =
   SidebarLayoutChatLayoutChatIdRouteImport.update({
     id: '/$chatId',
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/settings': typeof SidebarLayoutSettingsRouteWithChildren
   '/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/settings/analytics': typeof SidebarLayoutSettingsAnalyticsRoute
   '/settings/appearance': typeof SidebarLayoutSettingsAppearanceRoute
   '/settings/profile': typeof SidebarLayoutSettingsProfileRoute
   '/settings/project': typeof SidebarLayoutSettingsProjectRoute
@@ -105,6 +113,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/settings/analytics': typeof SidebarLayoutSettingsAnalyticsRoute
   '/settings/appearance': typeof SidebarLayoutSettingsAppearanceRoute
   '/settings/profile': typeof SidebarLayoutSettingsProfileRoute
   '/settings/project': typeof SidebarLayoutSettingsProjectRoute
@@ -119,6 +128,7 @@ export interface FileRoutesById {
   '/_sidebar-layout/_chat-layout': typeof SidebarLayoutChatLayoutRouteWithChildren
   '/_sidebar-layout/settings': typeof SidebarLayoutSettingsRouteWithChildren
   '/_sidebar-layout/_chat-layout/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/_sidebar-layout/settings/analytics': typeof SidebarLayoutSettingsAnalyticsRoute
   '/_sidebar-layout/settings/appearance': typeof SidebarLayoutSettingsAppearanceRoute
   '/_sidebar-layout/settings/profile': typeof SidebarLayoutSettingsProfileRoute
   '/_sidebar-layout/settings/project': typeof SidebarLayoutSettingsProjectRoute
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/settings'
     | '/$chatId'
+    | '/settings/analytics'
     | '/settings/appearance'
     | '/settings/profile'
     | '/settings/project'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/$chatId'
+    | '/settings/analytics'
     | '/settings/appearance'
     | '/settings/profile'
     | '/settings/project'
@@ -158,6 +170,7 @@ export interface FileRouteTypes {
     | '/_sidebar-layout/_chat-layout'
     | '/_sidebar-layout/settings'
     | '/_sidebar-layout/_chat-layout/$chatId'
+    | '/_sidebar-layout/settings/analytics'
     | '/_sidebar-layout/settings/appearance'
     | '/_sidebar-layout/settings/profile'
     | '/_sidebar-layout/settings/project'
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SidebarLayoutSettingsAppearanceRouteImport
       parentRoute: typeof SidebarLayoutSettingsRoute
     }
+    '/_sidebar-layout/settings/analytics': {
+      id: '/_sidebar-layout/settings/analytics'
+      path: '/analytics'
+      fullPath: '/settings/analytics'
+      preLoaderRoute: typeof SidebarLayoutSettingsAnalyticsRouteImport
+      parentRoute: typeof SidebarLayoutSettingsRoute
+    }
     '/_sidebar-layout/_chat-layout/$chatId': {
       id: '/_sidebar-layout/_chat-layout/$chatId'
       path: '/$chatId'
@@ -278,6 +298,7 @@ const SidebarLayoutChatLayoutRouteWithChildren =
   )
 
 interface SidebarLayoutSettingsRouteChildren {
+  SidebarLayoutSettingsAnalyticsRoute: typeof SidebarLayoutSettingsAnalyticsRoute
   SidebarLayoutSettingsAppearanceRoute: typeof SidebarLayoutSettingsAppearanceRoute
   SidebarLayoutSettingsProfileRoute: typeof SidebarLayoutSettingsProfileRoute
   SidebarLayoutSettingsProjectRoute: typeof SidebarLayoutSettingsProjectRoute
@@ -286,6 +307,7 @@ interface SidebarLayoutSettingsRouteChildren {
 }
 
 const SidebarLayoutSettingsRouteChildren: SidebarLayoutSettingsRouteChildren = {
+  SidebarLayoutSettingsAnalyticsRoute: SidebarLayoutSettingsAnalyticsRoute,
   SidebarLayoutSettingsAppearanceRoute: SidebarLayoutSettingsAppearanceRoute,
   SidebarLayoutSettingsProfileRoute: SidebarLayoutSettingsProfileRoute,
   SidebarLayoutSettingsProjectRoute: SidebarLayoutSettingsProjectRoute,

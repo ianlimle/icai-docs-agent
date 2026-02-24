@@ -3,6 +3,7 @@ import fs from 'fs';
 import { minimatch } from 'minimatch';
 import path from 'path';
 
+import { getCurrentStageTracker } from '../services/stage-tracker.service';
 import { ToolContext } from '../types/tools';
 
 const MCP_TOOL_SEPARATOR = '__';
@@ -15,8 +16,70 @@ export const createTool = <TInput, TOutput>(
 ): Tool<TInput, TOutput> => {
 	return tool<TInput, TOutput>({
 		...opts,
-		execute: (input, { experimental_context }) => {
-			return opts.execute(input, experimental_context as ToolContext);
+		execute: async (input, { experimental_context }) => {
+			const context = experimental_context as ToolContext;
+			const stageTracker = getCurrentStageTracker();
+
+			// Query construction stage - validate and prepare input
+			if (stageTracker) {
+				stageTracker.startStage('query_construction', {
+					toolName: opts.description,
+					input: input as Record<string, unknown>,
+				});
+			}
+
+			try {
+				// Execute the tool
+				let result: TOutput;
+
+				if (stageTracker) {
+					// Complete query construction stage
+					stageTracker.completeStage('query_construction', { success: true });
+
+					// Start tool execution stage
+					stageTracker.startStage('tool_execution', {
+						toolName: opts.description,
+					});
+
+					const startTime = performance.now();
+					result = await opts.execute(input, context);
+					const durationMs = Math.round(performance.now() - startTime);
+
+					// Complete tool execution stage
+					stageTracker.completeStage('tool_execution', {
+						success: true,
+						metadata: {
+							durationMs,
+							outputSize: JSON.stringify(result).length,
+						},
+					});
+				} else {
+					result = await opts.execute(input, context);
+				}
+
+				return result;
+			} catch (error) {
+				// Handle errors and record in stage tracker
+				const errorMessage = error instanceof Error ? error.message : String(error);
+
+				if (stageTracker) {
+					// Check which stage failed and complete it with failure
+					const queryConstructionStage = stageTracker.getStage('query_construction');
+					if (queryConstructionStage?.status === 'running') {
+						stageTracker.completeStage('query_construction', {
+							success: false,
+							error: errorMessage,
+						});
+					} else {
+						stageTracker.completeStage('tool_execution', {
+							success: false,
+							error: errorMessage,
+						});
+					}
+				}
+
+				throw error;
+			}
 		},
 	} as Tool<TInput, TOutput>);
 };

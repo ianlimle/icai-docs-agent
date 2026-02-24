@@ -15,6 +15,10 @@ const settingsNavItems = [
 		to: '/settings/usage',
 	},
 	{
+		label: 'Analytics',
+		to: '/settings/analytics',
+	},
+	{
 		label: 'Appearance',
 		to: '/settings/appearance',
 	},

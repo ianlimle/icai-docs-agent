@@ -22,6 +22,7 @@ export enum PostHogEvent {
 	SavedPromptCreated = 'saved_prompt_created',
 	SavedPromptUpdated = 'saved_prompt_updated',
 	SavedPromptDeleted = 'saved_prompt_deleted',
+	PipelineError = 'pipeline_error',
 }
 
 /**
