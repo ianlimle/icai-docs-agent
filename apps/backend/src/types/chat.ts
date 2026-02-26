@@ -10,6 +10,7 @@ import z from 'zod/v4';
 
 import { tools } from '../agents/tools';
 import { MessageFeedback } from '../db/abstractSchema';
+import { GuardrailSeverity,GuardrailViolationType } from './guardrails';
 import { llmProviderSchema } from './llm';
 
 export interface UIChat {
@@ -95,13 +96,39 @@ export const MentionSchema = z.object({
 
 export type AgentRequestUserMessage = z.infer<typeof AgentRequestUserMessageSchema>;
 export const AgentRequestUserMessageSchema = z.object({
-	text: z.string(),
+	text: z.string().min(1, 'Query cannot be empty').max(10000, 'Query is too long'),
 });
 
 const ModelSelectionSchema = z.object({
 	provider: llmProviderSchema,
 	modelId: z.string(),
 });
+
+/**
+ * Guardrail violation detail for API responses
+ */
+export const GuardrailViolationSchema = z.object({
+	type: z.nativeEnum(GuardrailViolationType),
+	severity: z.nativeEnum(GuardrailSeverity),
+	message: z.string(),
+});
+
+export type GuardrailViolation = z.infer<typeof GuardrailViolationSchema>;
+
+/**
+ * Guardrail error response format
+ */
+export const GuardrailErrorResponseSchema = z.object({
+	success: z.literal(false),
+	error: z.object({
+		type: z.literal('guardrail_violation'),
+		violations: z.array(GuardrailViolationSchema),
+		sanitizedQuery: z.string().optional(),
+		userMessage: z.string().optional(), // User-friendly error message
+	}),
+});
+
+export type GuardrailErrorResponse = z.infer<typeof GuardrailErrorResponseSchema>;
 
 export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 export const AgentRequestSchema = z.object({

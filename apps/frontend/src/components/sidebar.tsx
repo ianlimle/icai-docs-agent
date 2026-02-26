@@ -4,7 +4,6 @@ import { Link, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { ChatList } from './sidebar-chat-list';
 import { SidebarUserMenu } from './sidebar-user-menu';
 import { SidebarSettingsNav } from './sidebar-settings-nav';
-import { NaoLogoGreyscale } from './nao-logo-greyscale';
 
 import { Button } from '@/components/ui/button';
 import { cn, hideIf } from '@/lib/utils';
@@ -70,7 +69,25 @@ export function Sidebar() {
 									hideIf(effectiveIsCollapsed),
 								)}
 							>
-								<NaoLogoGreyscale className='size-5' />
+								<img
+									src='/icai-logo.png'
+									alt='ICAI Logo'
+									className='h-6 w-auto dark:brightness-100 dark:invert-0 brightness-0 invert'
+								/>
+							</div>
+
+							{/* Show smaller logo when collapsed */}
+							<div
+								className={cn(
+									'flex items-center justify-center absolute left-1/2 -translate-x-1/2 transition-[opacity,visibility] duration-300',
+									!isCollapsed && 'opacity-0 invisible',
+								)}
+							>
+								<img
+									src='/icai-logo.png'
+									alt='ICAI Logo'
+									className='h-5 w-auto dark:brightness-100 dark:invert-0 brightness-0 invert'
+								/>
 							</div>
 
 							<Button

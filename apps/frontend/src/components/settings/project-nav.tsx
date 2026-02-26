@@ -8,10 +8,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
 	{ to: '/settings/project', label: 'Project' },
+	{ to: '/settings/project/workflow', label: 'Workflow' },
 	{ to: '/settings/project/models', label: 'Models' },
 	{ to: '/settings/project/agent', label: 'Agent' },
-	{ to: '/settings/project/mcp-servers', label: 'MCP Servers' },
-	{ to: '/settings/project/slack', label: 'Slack' },
+	{ to: '/settings/project/guardrails', label: 'Guardrails' },
 	{ to: '/settings/project/team', label: 'Team' },
 ];
 

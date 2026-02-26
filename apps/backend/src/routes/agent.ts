@@ -11,13 +11,21 @@ const DEBUG_CHUNKS = false;
 export const agentRoutes = async (app: App) => {
 	app.addHook('preHandler', authMiddleware);
 
-	app.post('/', { schema: { body: AgentRequestSchema } }, async ({ user, project, body }) => {
+	app.post('/', { schema: { body: AgentRequestSchema } }, async (req, _reply) => {
+		const { user, project, body } = req;
 		const projectId = project?.id;
+
+		// Extract request details for audit logging
+		const requestDetails = {
+			ipAddress: (req.headers['x-forwarded-for'] as string | undefined) || req.ip,
+			userAgent: req.headers['user-agent'] as string | undefined,
+		};
 
 		const result = await handleAgentRoute({
 			userId: user.id,
 			projectId,
 			...body,
+			requestDetails,
 		});
 
 		posthog.capture(user.id, PostHogEvent.MessageSent, {

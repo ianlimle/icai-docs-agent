@@ -23,6 +23,9 @@ export enum PostHogEvent {
 	SavedPromptUpdated = 'saved_prompt_updated',
 	SavedPromptDeleted = 'saved_prompt_deleted',
 	PipelineError = 'pipeline_error',
+	WorkflowInitCompleted = 'workflow_init_completed',
+	WorkflowDebugCompleted = 'workflow_debug_completed',
+	WorkflowSyncCompleted = 'workflow_sync_completed',
 }
 
 /**

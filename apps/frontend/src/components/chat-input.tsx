@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, AlertTriangle, X } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -105,6 +105,11 @@ function ChatInputBase({
 	const hasTranscribeProvider = Object.values(transcribeModels.data ?? {}).some((p) => p.hasKey);
 	const isTranscribeReady = isTranscribeEnabled && hasTranscribeProvider;
 
+	// Query workflow status
+	const workflowStatus = useQuery(trpc.workflow.getStatus.queryOptions());
+	const [showWorkflowWarning, setShowWorkflowWarning] = useState(true);
+	const isWorkflowComplete = workflowStatus.data?.allCompleted ?? false;
+
 	const [micWarning, setMicWarning] = useState(false);
 	const micWarningTimer = useRef(0);
 
@@ -120,12 +125,18 @@ function ChatInputBase({
 			if (!trimmedInput || isRunning) {
 				return;
 			}
+
+			// Check workflow status before allowing message submission
+			if (!isWorkflowComplete) {
+				return;
+			}
+
 			setMentions(currentMentions.map((m) => ({ id: m.id, label: m.label, trigger: m.trigger })));
 			promptRef.current?.clear();
 			setHasInput(false);
 			await onSubmitMessage({ text: trimmedInput });
 		},
-		[onSubmitMessage, isRunning, setMentions, promptRef],
+		[onSubmitMessage, isRunning, setMentions, promptRef, isWorkflowComplete],
 	);
 
 	const onTranscribed = useCallback(
@@ -173,6 +184,13 @@ function ChatInputBase({
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
+
+		// Prevent submission if workflow is incomplete
+		if (!isWorkflowComplete) {
+			setShowWorkflowWarning(true);
+			return;
+		}
+
 		const value = promptRef.current?.getValue() ?? '';
 		const mentions = promptRef.current?.getMentions() ?? [];
 		await submitMessage(value, mentions);
@@ -215,6 +233,40 @@ function ChatInputBase({
 
 	return (
 		<div className={cn('p-4 pt-0 max-w-3xl w-full mx-auto', className)}>
+			{/* Workflow warning banner */}
+			{!isWorkflowComplete && showWorkflowWarning && (
+				<div className='mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md flex items-start gap-3'>
+					<AlertTriangle className='size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5' />
+					<div className='flex flex-col gap-2 flex-1'>
+						<div className='flex items-start justify-between gap-2'>
+							<div className='flex flex-col gap-1'>
+								<p className='text-sm font-semibold text-amber-900 dark:text-amber-100'>
+									Finish setting up your workflow
+								</p>
+								<p className='text-xs text-amber-700 dark:text-amber-300'>
+									Go to{' '}
+									<Link
+										to='/settings/project/workflow'
+										className='underline font-medium hover:text-amber-900 dark:hover:text-amber-100'
+									>
+										Project Settings {'>'} Workflow
+									</Link>{' '}
+									to complete the setup before starting a chat.
+								</p>
+							</div>
+							<Button
+								variant='ghost'
+								size='icon-sm'
+								onClick={() => setShowWorkflowWarning(false)}
+								className='shrink-0'
+							>
+								<X className='size-4' />
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			<form onSubmit={handleSubmit} className='mx-auto relative'>
 				<InputGroup htmlFor='chat-input'>
 					<Prompt
@@ -306,7 +358,7 @@ function ChatInputBase({
 
 							<ChatButton
 								isRunning={isRunning}
-								disabled={isLoadingMessages || !hasInput}
+								disabled={isLoadingMessages || !hasInput || !isWorkflowComplete}
 								onClick={isRunning ? stopAgent : handleSubmit}
 								type='button'
 							/>

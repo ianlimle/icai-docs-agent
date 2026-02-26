@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { SettingsCard } from '../ui/settings-card';
@@ -22,6 +22,7 @@ const estimateToolTokens = (tool: { name: string; description?: string; input_sc
 };
 
 export function McpSettings({ isAdmin }: Props) {
+	const queryClient = useQueryClient();
 	const mcpState = useQuery({
 		...trpc.mcp.getState.queryOptions(),
 		refetchOnMount: 'always',
@@ -30,26 +31,24 @@ export function McpSettings({ isAdmin }: Props) {
 
 	const reconnectMutation = useMutation(
 		trpc.mcp.reconnect.mutationOptions({
-			onSuccess: (data, _, __, ctx) => {
-				ctx.client.setQueryData(trpc.mcp.getState.queryKey(), () => {
-					return data;
-				});
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.mcp.getState.queryOptions());
 			},
 		}),
 	);
 
 	const toggleToolMutation = useMutation(
 		trpc.mcp.toggleTool.mutationOptions({
-			onSuccess: (data, _, __, ctx) => {
-				ctx.client.setQueryData(trpc.mcp.getState.queryKey(), () => data);
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.mcp.getState.queryOptions());
 			},
 		}),
 	);
 
 	const setAllServerToolsMutation = useMutation(
 		trpc.mcp.setAllServerTools.mutationOptions({
-			onSuccess: (data, _, __, ctx) => {
-				ctx.client.setQueryData(trpc.mcp.getState.queryKey(), () => data);
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.mcp.getState.queryOptions());
 			},
 		}),
 	);

@@ -48,4 +48,13 @@ export type DBNewMemory = typeof sqliteSchema.memories.$inferInsert;
 export type DBStageTelemetry = typeof sqliteSchema.stageTelemetry.$inferSelect;
 export type NewStageTelemetry = typeof sqliteSchema.stageTelemetry.$inferInsert;
 
+export type DBAuditLog = typeof sqliteSchema.auditLogs.$inferSelect;
+export type NewAuditLog = typeof sqliteSchema.auditLogs.$inferInsert;
+
+export type DBGuardrailsSettings = typeof sqliteSchema.guardrailsSettings.$inferSelect;
+export type NewGuardrailsSettings = typeof sqliteSchema.guardrailsSettings.$inferInsert;
+
+// Re-export schema tables for easier importing
+export const { auditLogs, guardrailsSettings } = allSchema;
+
 export default allSchema as typeof sqliteSchema;

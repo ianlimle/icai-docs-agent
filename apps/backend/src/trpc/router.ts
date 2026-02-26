@@ -4,6 +4,7 @@ import { chatRoutes } from './chat.routes';
 import { conversationAnalyticsRoutes } from './conversation-analytics.routes';
 import { feedbackRoutes } from './feedback.routes';
 import { googleRoutes } from './google.routes';
+import { guardrailsRoutes } from './guardrails.routes';
 import { mcpRoutes } from './mcp.routes';
 import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
@@ -15,6 +16,7 @@ import { transcribeRoutes } from './transcribe.routes';
 import { router } from './trpc';
 import { usageRoutes } from './usage.routes';
 import { userRoutes } from './user.routes';
+import { workflowRoutes } from './workflow.routes';
 
 export const trpcRouter = router({
 	analytics: analyticsRoutes,
@@ -33,6 +35,8 @@ export const trpcRouter = router({
 	toolAnalytics: toolAnalyticsRoutes,
 	conversationAnalytics: conversationAnalyticsRoutes,
 	transcribe: transcribeRoutes,
+	workflow: workflowRoutes,
+	guardrails: guardrailsRoutes,
 });
 
 export type TrpcRouter = typeof trpcRouter;

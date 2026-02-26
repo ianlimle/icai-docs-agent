@@ -1,6 +1,7 @@
 import { type ProviderMetadata } from 'ai';
 import { sql } from 'drizzle-orm';
 import {
+	bigint,
 	boolean,
 	check,
 	index,
@@ -142,6 +143,13 @@ export const project = pgTable(
 		agentSettings: jsonb('agent_settings').$type<AgentSettings>(),
 		enabledMcpTools: jsonb('enabled_tools').$type<string[]>().notNull().default([]),
 		knownMcpServers: jsonb('known_mcp_servers').$type<string[]>().notNull().default([]),
+		workflowInitCompleted: boolean('workflow_init_completed').default(false).notNull(),
+		workflowInitCompletedAt: timestamp('workflow_init_completed_at'),
+		workflowDebugCompleted: boolean('workflow_debug_completed').default(false).notNull(),
+		workflowDebugCompletedAt: timestamp('workflow_debug_completed_at'),
+		workflowSyncCompleted: boolean('workflow_sync_completed').default(false).notNull(),
+		workflowSyncCompletedAt: timestamp('workflow_sync_completed_at'),
+		workflowLastError: text('workflow_last_error'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at')
 			.defaultNow()
@@ -419,4 +427,89 @@ export const errors = pgTable(
 		index('errors_created_at_idx').on(t.createdAt),
 		index('errors_error_type_idx').on(t.errorType),
 	],
+);
+
+/**
+ * Guardrails audit logs table
+ */
+export const auditLogs = pgTable(
+	'audit_logs',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		userId: text('user_id').notNull(),
+		projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
+		timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
+		eventType: text('event_type').notNull(),
+		violationType: text('violation_type').notNull(),
+		severity: text('severity', { enum: ['low', 'medium', 'high', 'critical'] }).notNull(),
+		query: text('query').notNull(),
+		sanitizedQuery: text('sanitized_query'),
+		message: text('message').notNull(),
+		details: jsonb('details').$type<Record<string, unknown>>(),
+		ipAddress: text('ip_address'),
+		userAgent: text('user_agent'),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+	},
+	(t) => [
+		index('audit_logs_user_id_idx').on(t.userId),
+		index('audit_logs_project_id_idx').on(t.projectId),
+		index('audit_logs_timestamp_idx').on(t.timestamp),
+		index('audit_logs_event_type_idx').on(t.eventType),
+		index('audit_logs_created_at_idx').on(t.createdAt),
+	],
+);
+
+/**
+ * Guardrails settings table
+ */
+export const guardrailsSettings = pgTable(
+	'guardrails_settings',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' })
+			.unique(),
+		settings: jsonb('settings')
+			.$type<{
+				maxQueryLength: number;
+				maxQueryComplexity: number;
+				enableRateLimiting: boolean;
+				rateLimitConfig: {
+					maxRequestsPerMinute: number;
+					maxRequestsPerHour: number;
+					burstAllowance: number;
+				};
+				enablePromptInjectionDetection: boolean;
+				promptInjectionStrictness: 'low' | 'medium' | 'high';
+				enableProfanityFilter: boolean;
+				enablePIIDetection: boolean;
+				enablePIIRedaction: boolean;
+				customPatterns: Array<{
+					id: string;
+					name: string;
+					pattern: string;
+					isAllowed: boolean;
+					isEnabled: boolean;
+					description: string | undefined;
+					createdAt: number;
+					updatedAt: number;
+				}>;
+				enableAuditLogging: boolean;
+				auditLogRetentionDays: number;
+				blockOnError: boolean;
+				showErrorToUser: boolean;
+			}>()
+			.notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at')
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [index('guardrails_settings_project_id_idx').on(t.projectId)],
 );

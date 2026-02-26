@@ -148,6 +148,13 @@ export const project = sqliteTable(
 		agentSettings: text('agent_settings', { mode: 'json' }).$type<AgentSettings>(),
 		enabledMcpTools: text('enabled_tools', { mode: 'json' }).$type<string[]>().notNull().default([]),
 		knownMcpServers: text('known_mcp_servers', { mode: 'json' }).$type<string[]>().notNull().default([]),
+		workflowInitCompleted: integer('workflow_init_completed', { mode: 'boolean' }).default(false).notNull(),
+		workflowInitCompletedAt: integer('workflow_init_completed_at', { mode: 'timestamp_ms' }),
+		workflowDebugCompleted: integer('workflow_debug_completed', { mode: 'boolean' }).default(false).notNull(),
+		workflowDebugCompletedAt: integer('workflow_debug_completed_at', { mode: 'timestamp_ms' }),
+		workflowSyncCompleted: integer('workflow_sync_completed', { mode: 'boolean' }).default(false).notNull(),
+		workflowSyncCompletedAt: integer('workflow_sync_completed_at', { mode: 'timestamp_ms' }),
+		workflowLastError: text('workflow_last_error'),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -448,4 +455,93 @@ export const errors = sqliteTable(
 		index('errors_created_at_idx').on(t.createdAt),
 		index('errors_error_type_idx').on(t.errorType),
 	],
+);
+
+/**
+ * Guardrails audit logs table
+ */
+export const auditLogs = sqliteTable(
+	'audit_logs',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		userId: text('user_id').notNull(),
+		projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
+		timestamp: integer('timestamp', { mode: 'timestamp' }).notNull(),
+		eventType: text('event_type').notNull(),
+		violationType: text('violation_type').notNull(),
+		severity: text('severity', { enum: ['low', 'medium', 'high', 'critical'] }).notNull(),
+		query: text('query').notNull(),
+		sanitizedQuery: text('sanitized_query'),
+		message: text('message').notNull(),
+		details: text('details', { mode: 'json' }).$type<Record<string, unknown>>(),
+		ipAddress: text('ip_address'),
+		userAgent: text('user_agent'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.default(sql`(unixepoch())`)
+			.notNull(),
+	},
+	(t) => [
+		index('audit_logs_user_id_idx').on(t.userId),
+		index('audit_logs_project_id_idx').on(t.projectId),
+		index('audit_logs_timestamp_idx').on(t.timestamp),
+		index('audit_logs_event_type_idx').on(t.eventType),
+		index('audit_logs_created_at_idx').on(t.createdAt),
+	],
+);
+
+/**
+ * Guardrails settings table
+ */
+export const guardrailsSettings = sqliteTable(
+	'guardrails_settings',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' })
+			.unique(),
+		settings: text('settings', { mode: 'json' })
+			.$type<{
+				maxQueryLength: number;
+				maxQueryComplexity: number;
+				enableRateLimiting: boolean;
+				rateLimitConfig: {
+					maxRequestsPerMinute: number;
+					maxRequestsPerHour: number;
+					burstAllowance: number;
+				};
+				enablePromptInjectionDetection: boolean;
+				promptInjectionStrictness: 'low' | 'medium' | 'high';
+				enableProfanityFilter: boolean;
+				enablePIIDetection: boolean;
+				enablePIIRedaction: boolean;
+				customPatterns: Array<{
+					id: string;
+					name: string;
+					pattern: string;
+					isAllowed: boolean;
+					isEnabled: boolean;
+					description: string | undefined;
+					createdAt: number;
+					updatedAt: number;
+				}>;
+				enableAuditLogging: boolean;
+				auditLogRetentionDays: number;
+				blockOnError: boolean;
+				showErrorToUser: boolean;
+			}>()
+			.notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.default(sql`(unixepoch())`)
+			.notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.default(sql`(unixepoch())`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [index('guardrails_settings_project_id_idx').on(t.projectId)],
 );
