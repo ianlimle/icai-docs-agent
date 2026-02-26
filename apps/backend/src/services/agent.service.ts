@@ -231,7 +231,7 @@ class AgentManager {
 	 */
 	private async _buildModelMessages(uiMessages: UIMessage[], mentions?: Mention[]): Promise<ModelMessage[]> {
 		uiMessages = this._addSkills(uiMessages, mentions);
-		const modelMessages = await convertToModelMessages(uiMessages);
+		const modelMessages = await convertToModelMessages(uiMessages, { tools: this._agentTools });
 		const memories = await memoryService.safeGetUserMemories(this.chat.userId, this.chat.projectId, this.chat.id);
 		const userRules = getUserRules();
 		const connections = getConnections();
