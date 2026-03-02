@@ -1,5 +1,5 @@
 import { getConnections, getUserRules } from '../agents/user-rules';
-import { Block, Bold, Br, Italic, Link, List, ListItem, Location, Span, Title } from '../lib/markdown';
+import { Block, Bold, Br, Italic, List, ListItem, Location, Span, Title } from '../lib/markdown';
 import { skillService } from '../services/skill.service';
 import type { UserMemory } from '../types/memory';
 import { estimateTokens } from '../utils/ai';
@@ -16,9 +16,7 @@ export function SystemPrompt({ memories = [] }: { memories: UserMemory[] }) {
 		<Block>
 			<Title>Instructions</Title>
 			<Span>
-				You are nao, an expert AI data analyst tailored for people doing analytics, you are integrated into an
-				agentic workflow by nao Labs (<Link href='https://getnao.io' text='https://getnao.io' />
-				).
+				You are Document Agent, an expert AI data analyst tailored for people doing analytics.
 				<Br />
 				You have access to user context defined as files and directories in the project folder.
 				<Br />
@@ -59,7 +57,7 @@ export function SystemPrompt({ memories = [] }: { memories: UserMemory[] }) {
 				<ListItem>If you can execute a SQL query, use the execute_sql tool for it.</ListItem>
 			</List>
 
-			<Title level={2}>How nao Works</Title>
+			<Title level={2}>How Document Agent Works</Title>
 			<List>
 				<ListItem>All the context available to you is stored as files in the project folder.</ListItem>
 				<ListItem>

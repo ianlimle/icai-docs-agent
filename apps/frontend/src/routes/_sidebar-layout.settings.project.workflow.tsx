@@ -1,13 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Circle, AlertCircle, Loader2, Play, RefreshCw, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, Circle, AlertCircle, Loader2, Play, RefreshCw, Settings, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { trpc } from '@/main';
+import { useActiveProject } from '@/hooks/use-projects';
 import { Button } from '@/components/ui/button';
 import { SettingsCard } from '@/components/ui/settings-card';
-import { SettingsToggleRow } from '@/components/ui/settings-toggle-row';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
 	Dialog,
@@ -38,22 +37,44 @@ interface WorkflowStep {
 function WorkflowPage() {
 	const [runningStep, setRunningStep] = useState<'init' | 'debug' | 'sync' | null>(null);
 	const [openModal, setOpenModal] = useState<'init' | 'debug' | 'sync' | null>(null);
+	const [errorModal, setErrorModal] = useState<{
+		title: string;
+		message: string;
+		suggestions: string[];
+	} | null>(null);
+
+	// Get active project to load project name
+	const { data: activeProject } = useActiveProject();
 
 	// Init configuration state - now handled by InitWizard
 	const [projectName, setProjectName] = useState('');
 	const [forceInit, setForceInit] = useState(false);
 
-	// Init wizard data
-	const [initDatabases, setInitDatabases] = useState<any[]>([]);
-	const [initRepos, setInitRepos] = useState<any[]>([]);
-	const [initDocFiles, setInitDocFiles] = useState<any[]>([]);
+	const queryClient = useQueryClient();
+
+	// Load project name from active project
+	useEffect(() => {
+		if (activeProject?.name) {
+			setProjectName(activeProject.name);
+		}
+	}, [activeProject?.name]);
+
+	// Refresh workflow status when active project changes
+	useEffect(() => {
+		if (activeProject?.id) {
+			// Invalidate and refetch workflow status when switching projects
+			queryClient.invalidateQueries({
+				queryKey: trpc.workflow.getStatus.queryKey(),
+			});
+		}
+	}, [activeProject?.id, queryClient]);
 
 	// Sync configuration state
-	const [selectedProviders, setSelectedProviders] = useState<string[]>(['databases', 'repos']);
+	const [selectedProviders, setSelectedProviders] = useState<string[]>(['databases', 'repos', 'docs', 'semantics']);
 
 	const { data: workflowStatus, isLoading } = useQuery({
 		...trpc.workflow.getStatus.queryOptions(),
-		refetchInterval: runningStep ? 2000 : false,
+		refetchInterval: runningStep ? 2000 : 5000, // Always refresh every 5 seconds, more frequently when running
 	});
 
 	const runInitMutation = useMutation(
@@ -63,8 +84,9 @@ function WorkflowPage() {
 				setRunningStep(null);
 				setOpenModal(null);
 			},
-			onError: () => {
+			onError: (error) => {
 				setRunningStep(null);
+				handleMutationError(error, 'Initialize Project');
 			},
 		}),
 	);
@@ -76,8 +98,9 @@ function WorkflowPage() {
 				setRunningStep(null);
 				setOpenModal(null);
 			},
-			onError: () => {
+			onError: (error) => {
 				setRunningStep(null);
+				handleMutationError(error, 'Verify Setup');
 			},
 		}),
 	);
@@ -89,17 +112,26 @@ function WorkflowPage() {
 				setRunningStep(null);
 				setOpenModal(null);
 			},
-			onError: () => {
+			onError: (error) => {
 				setRunningStep(null);
+				handleMutationError(error, 'Synchronize Context');
 			},
 		}),
 	);
 
 	const getStepStatus = (step: 'init' | 'debug' | 'sync'): StepStatus => {
-		if (runningStep === step) return 'in-progress';
-		if (step === 'init' && workflowStatus?.initCompleted) return 'completed';
-		if (step === 'debug' && workflowStatus?.debugCompleted) return 'completed';
-		if (step === 'sync' && workflowStatus?.syncCompleted) return 'completed';
+		if (runningStep === step) {
+			return 'in-progress';
+		}
+		if (step === 'init' && workflowStatus?.initCompleted) {
+			return 'completed';
+		}
+		if (step === 'debug' && workflowStatus?.debugCompleted) {
+			return 'completed';
+		}
+		if (step === 'sync' && workflowStatus?.syncCompleted) {
+			return 'completed';
+		}
 		return 'pending';
 	};
 
@@ -117,10 +149,18 @@ function WorkflowPage() {
 	};
 
 	const canRunStep = (step: 'init' | 'debug' | 'sync'): boolean => {
-		if (runningStep) return false;
-		if (step === 'init') return true;
-		if (step === 'debug') return workflowStatus?.initCompleted ?? false;
-		if (step === 'sync') return workflowStatus?.debugCompleted ?? false;
+		if (runningStep) {
+			return false;
+		}
+		if (step === 'init') {
+			return true;
+		}
+		if (step === 'debug') {
+			return workflowStatus?.initCompleted ?? false;
+		}
+		if (step === 'sync') {
+			return workflowStatus?.debugCompleted ?? false;
+		}
 		return false;
 	};
 
@@ -129,7 +169,7 @@ function WorkflowPage() {
 			id: 'init',
 			title: '1. Initialize Project',
 			description:
-				'Set up the project configuration with nao_config.yaml. This creates the necessary configuration files for your analytics project.',
+				'Set up the project configuration. This creates the necessary configuration files for your analytics project.',
 			status: getStepStatus('init'),
 			error: workflowStatus?.lastError,
 			completedAt: workflowStatus?.initCompletedAt,
@@ -158,18 +198,52 @@ function WorkflowPage() {
 		setOpenModal(step);
 	};
 
-	const handleRunInit = (databases: any[], repos: any[], docFiles: any[]) => {
-		// Store the data for the mutation
-		setInitDatabases(databases);
-		setInitRepos(repos);
-		setInitDocFiles(docFiles);
+	const handleMutationError = (error: unknown, operation: string) => {
+		console.error('Mutation error:', error);
 
+		// Check for HTTP 413 error (Request body too large)
+		if (error && typeof error === 'object' && 'data' in error) {
+			const errorData = error.data as { code?: number; httpStatus?: number };
+			if (errorData.code === 413 || errorData.httpStatus === 413) {
+				setErrorModal({
+					title: 'File Upload Too Large',
+					message: `The ${operation} operation failed because the total size of uploaded files is too large.`,
+					suggestions: [
+						'Try uploading fewer files at once',
+						'Compress large files (PDF, images) before uploading',
+						'Consider using external storage (like S3) and provide URLs instead',
+						'Maximum recommended upload size is 75 MB per operation',
+					],
+				});
+				return;
+			}
+		}
+
+		// Generic error for other cases
+		const errorMessage =
+			error && typeof error === 'object' && 'message' in error
+				? (error.message as string)
+				: 'An unexpected error occurred';
+
+		setErrorModal({
+			title: `${operation} Failed`,
+			message: errorMessage,
+			suggestions: [
+				'Check your network connection',
+				'Try again in a moment',
+				'If the problem persists, contact support',
+			],
+		});
+	};
+
+	const handleRunInit = (databases: any[], repos: any[], docFiles: any[], confluence: any[]) => {
 		// Run the mutation with the configuration data
 		runInitMutation.mutate({
 			projectName: projectName || undefined,
 			databases,
 			repos,
 			docFiles,
+			confluence,
 		});
 	};
 
@@ -445,6 +519,35 @@ function WorkflowPage() {
 								</>
 							)}
 						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Error Modal */}
+			<Dialog open={errorModal !== null} onOpenChange={(open) => !open && setErrorModal(null)}>
+				<DialogContent className='max-w-lg'>
+					<DialogHeader>
+						<DialogTitle className='flex items-center gap-2'>
+							<AlertTriangle className='size-5 text-amber-500' />
+							{errorModal?.title}
+						</DialogTitle>
+					</DialogHeader>
+
+					<div className='flex flex-col gap-4 py-4'>
+						<p className='text-sm text-muted-foreground'>{errorModal?.message}</p>
+
+						<div className='p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md'>
+							<p className='text-sm font-medium mb-2 text-amber-900 dark:text-amber-100'>Suggestions:</p>
+							<ul className='text-sm text-amber-800 dark:text-amber-200 space-y-1 list-disc list-inside'>
+								{errorModal?.suggestions.map((suggestion, index) => (
+									<li key={index}>{suggestion}</li>
+								))}
+							</ul>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button onClick={() => setErrorModal(null)}>Got it</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

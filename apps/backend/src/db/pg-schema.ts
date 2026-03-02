@@ -513,3 +513,23 @@ export const guardrailsSettings = pgTable(
 	},
 	(t) => [index('guardrails_settings_project_id_idx').on(t.projectId)],
 );
+
+/**
+ * User preferences table for tracking active project
+ */
+export const userPreferences = pgTable(
+	'user_preferences',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' })
+			.unique(),
+		activeProjectId: text('active_project_id').references(() => project.id, { onDelete: 'set null' }),
+		lastProjectId: text('last_project_id'),
+		updatedAt: timestamp('updated_at')
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.userId] })],
+);

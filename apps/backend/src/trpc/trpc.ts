@@ -62,6 +62,33 @@ export const projectProtectedProcedure = protectedProcedure.use(async ({ ctx, ne
 	return next({ ctx: { project, userRole } });
 });
 
+// Optional project procedure (for project listing/creation)
+export const optionalProjectProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+	const project = await projectQueries.getActiveProjectByUserId(ctx.user.id);
+	const userRole = project ? await projectQueries.getUserRoleInProject(project.id, ctx.user.id) : null;
+	return next({ ctx: { project: project ?? null, userRole } });
+});
+
+// Specific project by ID procedure
+export function specificProjectProcedure(projectIdParam: string = 'projectId') {
+	return protectedProcedure.use(async ({ ctx, next, getRawInput }) => {
+		const rawInput = (await getRawInput()) as Record<string, unknown>;
+		const projectId = rawInput[projectIdParam] as string;
+
+		const member = await projectQueries.getProjectMember(projectId, ctx.user.id);
+		if (!member) {
+			throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have access to this project' });
+		}
+
+		const project = await projectQueries.getProjectById(projectId);
+		if (!project) {
+			throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+		}
+
+		return next({ ctx: { project, userRole: member.role } });
+	});
+}
+
 export const adminProtectedProcedure = projectProtectedProcedure.use(async ({ ctx, next }) => {
 	if (ctx.userRole !== 'admin') {
 		throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can perform this action' });

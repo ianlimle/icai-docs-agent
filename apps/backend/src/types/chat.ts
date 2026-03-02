@@ -10,7 +10,7 @@ import z from 'zod/v4';
 
 import { tools } from '../agents/tools';
 import { MessageFeedback } from '../db/abstractSchema';
-import { GuardrailSeverity,GuardrailViolationType } from './guardrails';
+import { GuardrailSeverity, GuardrailViolationType } from './guardrails';
 import { llmProviderSchema } from './llm';
 
 export interface UIChat {

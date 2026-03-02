@@ -38,6 +38,7 @@ This will create a new nao project in the current directory. It will prompt you 
 - **LLM provider** (OpenAI, Anthropic, Mistral, Gemini)
 - **Slack integration**
 - **Notion integration**
+- **Confluence integration** - Sync pages from your Confluence wiki
 
 The resulting project structure looks like:
 
@@ -49,6 +50,8 @@ The resulting project structure looks like:
 ├── databases/
 ├── queries/
 ├── docs/
+│   ├── notion/         # Notion page exports
+│   └── confluence/     # Confluence page exports
 ├── semantics/
 ├── repos/
 ├── agent/
@@ -88,6 +91,7 @@ Syncs configured resources to local files:
 - **Databases** — generates markdown docs (`columns.md`, `preview.md`, `description.md`, `profiling.md`) for each table into `databases/`
 - **Git repositories** — clones or pulls repos into `repos/`
 - **Notion pages** — exports pages as markdown into `docs/notion/`
+- **Confluence pages** — exports pages as markdown into `docs/confluence/`
 
 After syncing, any Jinja templates (`*.j2` files) in the project directory are rendered with the nao context.
 
@@ -141,6 +145,16 @@ Snowflake supports three authentication methods during `nao init`:
 - **SSO**: Browser-based authentication (recommended for organizations with SSO policies)
 - **Password**: Traditional username/password
 - **Key-pair**: Private key file with optional passphrase
+
+### Confluence authentication
+
+When you add Confluence integration during `nao init`, you'll need:
+
+1. **Space URL** - The URL to your Confluence space (e.g., `https://company.atlassian.net/wiki/spaces/TEAM`)
+2. **API Token** - Generate at https://id.atlassian.com/manage-profile/security/api-tokens
+3. **Email** - Your Atlassian account email
+
+The CLI will authenticate using the API token and email, then sync all pages from the specified space to `docs/confluence/` as markdown files with frontmatter containing page metadata.
 
 ## Development
 

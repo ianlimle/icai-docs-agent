@@ -40,6 +40,14 @@ interface DocFile {
 	name: string;
 	size: number;
 	file?: File;
+	content?: string; // base64-encoded content
+}
+
+interface ConfluenceConfig {
+	id: string;
+	spaceUrl: string;
+	apiToken?: string;
+	email?: string;
 }
 
 interface InitWizardProps {
@@ -47,7 +55,12 @@ interface InitWizardProps {
 	forceInit: boolean;
 	onProjectNameChange: (name: string) => void;
 	onForceInitChange: (force: boolean) => void;
-	onInit: (databases: DatabaseConfig[], repos: RepoConfig[], docFiles: DocFile[]) => void;
+	onInit: (
+		databases: DatabaseConfig[],
+		repos: RepoConfig[],
+		docFiles: Array<{ id: string; name: string; size: number; content: string }>,
+		confluence: ConfluenceConfig[],
+	) => void;
 	isPending?: boolean;
 }
 
@@ -59,10 +72,11 @@ export function InitWizard({
 	onInit,
 	isPending = false,
 }: InitWizardProps) {
-	const [activeTab, setActiveTab] = useState<'basic' | 'databases' | 'repos' | 'docs'>('basic');
+	const [activeTab, setActiveTab] = useState<'basic' | 'databases' | 'repos' | 'docs' | 'confluence'>('basic');
 	const [databases, setDatabases] = useState<DatabaseConfig[]>([]);
 	const [repos, setRepos] = useState<RepoConfig[]>([]);
 	const [docFiles, setDocFiles] = useState<DocFile[]>([]);
+	const [confluence, setConfluence] = useState<ConfluenceConfig[]>([]);
 
 	// Database state
 	const [newDbType, setNewDbType] = useState('postgres');
@@ -73,8 +87,15 @@ export function InitWizard({
 	const [newRepoUrl, setNewRepoUrl] = useState('');
 	const [newRepoBranch, setNewRepoBranch] = useState('main');
 
+	// Confluence state
+	const [newSpaceUrl, setNewSpaceUrl] = useState('');
+	const [newApiToken, setNewApiToken] = useState('');
+	const [newEmail, setNewEmail] = useState('');
+
 	const handleAddDatabase = () => {
-		if (!newDbName.trim()) return;
+		if (!newDbName.trim()) {
+			return;
+		}
 
 		const newDb: DatabaseConfig = {
 			id: crypto.randomUUID(),
@@ -93,7 +114,9 @@ export function InitWizard({
 	};
 
 	const handleAddRepo = () => {
-		if (!newRepoUrl.trim()) return;
+		if (!newRepoUrl.trim()) {
+			return;
+		}
 
 		const newRepo: RepoConfig = {
 			id: crypto.randomUUID(),
@@ -126,41 +149,76 @@ export function InitWizard({
 		setDocFiles(docFiles.filter((file) => file.id !== id));
 	};
 
-	const handleInit = () => {
-		onInit(databases, repos, docFiles);
+	const handleAddConfluence = () => {
+		if (!newSpaceUrl.trim()) {
+			return;
+		}
+
+		const newSpace: ConfluenceConfig = {
+			id: crypto.randomUUID(),
+			spaceUrl: newSpaceUrl.trim(),
+			apiToken: newApiToken || undefined,
+			email: newEmail || undefined,
+		};
+
+		setConfluence([...confluence, newSpace]);
+		setNewSpaceUrl('');
+		setNewApiToken('');
+		setNewEmail('');
 	};
 
-	const canProceed = (tab: string) => {
-		switch (tab) {
-			case 'basic':
-				return projectName.trim().length > 0;
-			case 'databases':
-			case 'repos':
-			case 'docs':
-				return true;
-			default:
-				return false;
-		}
+	const handleRemoveConfluence = (id: string) => {
+		setConfluence(confluence.filter((space) => space.id !== id));
+	};
+
+	const readFileAsBase64 = (file: File): Promise<string> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				const result = reader.result as string;
+				// Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+				const base64 = result.split(',')[1];
+				resolve(base64);
+			};
+			reader.onerror = reject;
+			reader.readAsDataURL(file);
+		});
+	};
+
+	const handleInit = async () => {
+		// Convert files to base64 before sending
+		const docFilesWithContent = await Promise.all(
+			docFiles.map(async (docFile) => {
+				if (!docFile.file) {
+					return { ...docFile, content: '' };
+				}
+				const content = await readFileAsBase64(docFile.file);
+				return {
+					id: docFile.id,
+					name: docFile.name,
+					size: docFile.size,
+					content,
+				};
+			}),
+		);
+		onInit(databases, repos, docFilesWithContent, confluence);
 	};
 
 	return (
 		<div className='flex flex-col gap-6'>
 			{/* Progress indicator */}
 			<div className='flex items-center gap-2'>
-				{['basic', 'databases', 'repos', 'docs'].map((tab) => (
+				{['basic', 'databases', 'repos', 'docs', 'confluence'].map((tab) => (
 					<div
 						key={tab}
-						className={cn(
-							'h-1 flex-1 rounded-full',
-							tab === activeTab ? 'bg-primary' : 'bg-muted',
-						)}
+						className={cn('h-1 flex-1 rounded-full', tab === activeTab ? 'bg-primary' : 'bg-muted')}
 					/>
 				))}
 			</div>
 
 			{/* Tabs */}
 			<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className='w-full'>
-				<TabsList className='grid w-full grid-cols-4'>
+				<TabsList className='grid w-full grid-cols-5'>
 					<TabsTrigger value='basic'>Basic Info</TabsTrigger>
 					<TabsTrigger value='databases'>
 						Databases
@@ -183,6 +241,14 @@ export function InitWizard({
 						{docFiles.length > 0 && (
 							<Badge variant='secondary' className='ml-1'>
 								{docFiles.length}
+							</Badge>
+						)}
+					</TabsTrigger>
+					<TabsTrigger value='confluence'>
+						Confluence
+						{confluence.length > 0 && (
+							<Badge variant='secondary' className='ml-1'>
+								{confluence.length}
 							</Badge>
 						)}
 					</TabsTrigger>
@@ -211,7 +277,8 @@ export function InitWizard({
 							<div className='space-y-0.5'>
 								<div className='text-sm font-medium'>Overwrite existing configuration</div>
 								<p className='text-xs text-muted-foreground'>
-									If a config file already exists, check this to update it instead of creating a new one.
+									If a config file already exists, check this to update it instead of creating a new
+									one.
 								</p>
 							</div>
 						</Switch>
@@ -364,7 +431,8 @@ export function InitWizard({
 							</div>
 
 							<p className='text-xs text-muted-foreground'>
-								Add your Git repositories to provide code context for the AI. Supports GitHub, GitLab, and more.
+								Add your Git repositories to provide code context for the AI. Supports GitHub, GitLab,
+								and more.
 							</p>
 						</div>
 
@@ -381,7 +449,9 @@ export function InitWizard({
 											<div className='flex flex-col gap-1 flex-1 min-w-0'>
 												<div className='text-sm font-medium truncate'>{repo.url}</div>
 												{repo.branch && repo.branch !== 'main' && (
-													<div className='text-xs text-muted-foreground'>Branch: {repo.branch}</div>
+													<div className='text-xs text-muted-foreground'>
+														Branch: {repo.branch}
+													</div>
 												)}
 											</div>
 											<Button
@@ -467,16 +537,142 @@ export function InitWizard({
 
 						<div className='flex flex-col gap-2'>
 							<p className='text-xs text-muted-foreground'>
-								Upload documentation files (PDF, Markdown, etc.) to provide additional context to the AI.
-								Files will be stored in the{' '}
+								Upload documentation files (PDF, Markdown, etc.) to provide additional context to the
+								AI. Files will be stored in the{' '}
 								<code className='px-1 py-0.5 bg-muted rounded text-xs font-mono'>docs/</code>{' '}
 								subdirectory.
 							</p>
-							<p className='text-xs text-muted-foreground'>This step is optional but recommended for better results.</p>
+							<p className='text-xs text-muted-foreground'>
+								This step is optional but recommended for better results.
+							</p>
 						</div>
 
 						<div className='flex justify-between'>
 							<Button variant='outline' onClick={() => setActiveTab('repos')}>
+								← Back
+							</Button>
+							<Button onClick={() => setActiveTab('confluence')}>Next: Add Confluence →</Button>
+						</div>
+					</div>
+				</TabsContent>
+
+				{/* Confluence Tab */}
+				<TabsContent value='confluence' className='mt-4'>
+					<div className='flex flex-col gap-6'>
+						{/* Add Confluence Space Form */}
+						<div className='flex flex-col gap-3 p-4 border rounded-lg bg-muted/30'>
+							<h4 className='text-sm font-semibold'>Add Confluence Space</h4>
+
+							<div className='flex flex-col gap-3'>
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor='space-url'>
+										Space URL <span className='text-red-500'>*</span>
+									</Label>
+									<Input
+										id='space-url'
+										placeholder='https://company.atlassian.net/wiki/spaces/TEAM'
+										value={newSpaceUrl}
+										onChange={(e) => setNewSpaceUrl(e.target.value)}
+										className='font-mono text-sm'
+									/>
+									<p className='text-xs text-muted-foreground'>
+										URL to your Confluence space (e.g.,
+										https://company.atlassian.net/wiki/spaces/TEAM)
+									</p>
+								</div>
+
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor='api-token'>API Token</Label>
+									<Input
+										id='api-token'
+										placeholder='Your Confluence API token'
+										value={newApiToken}
+										onChange={(e) => setNewApiToken(e.target.value)}
+										className='font-mono text-sm'
+										type='password'
+									/>
+									<p className='text-xs text-muted-foreground'>
+										Create at{' '}
+										<a
+											href='https://id.atlassian.com/manage-profile/security/api-tokens'
+											target='_blank'
+											rel='noopener noreferrer'
+											className='text-primary hover:underline'
+										>
+											Atlassian Account Settings
+										</a>
+									</p>
+								</div>
+
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor='email'>Email</Label>
+									<Input
+										id='email'
+										placeholder='user@company.com'
+										value={newEmail}
+										onChange={(e) => setNewEmail(e.target.value)}
+										className='font-mono text-sm'
+										type='email'
+									/>
+									<p className='text-xs text-muted-foreground'>
+										Email associated with your Atlassian account
+									</p>
+								</div>
+
+								<Button onClick={handleAddConfluence} disabled={!newSpaceUrl.trim()}>
+									<Plus className='size-4 mr-2' />
+									Add Confluence Space
+								</Button>
+							</div>
+
+							<p className='text-xs text-muted-foreground'>
+								Add your Confluence spaces to provide documentation context for the AI. All pages in the
+								space will be synchronized.
+							</p>
+						</div>
+
+						{/* Confluence Space List */}
+						{confluence.length > 0 && (
+							<div className='flex flex-col gap-2'>
+								<h4 className='text-sm font-semibold'>
+									Configured Confluence Spaces ({confluence.length})
+								</h4>
+								<div className='flex flex-col gap-2'>
+									{confluence.map((space) => (
+										<div
+											key={space.id}
+											className='flex items-center justify-between p-3 border rounded-lg bg-background'
+										>
+											<div className='flex flex-col gap-1 flex-1 min-w-0'>
+												<div className='text-sm font-medium truncate'>{space.spaceUrl}</div>
+												{space.email && (
+													<div className='text-xs text-muted-foreground'>{space.email}</div>
+												)}
+											</div>
+											<Button
+												variant='ghost'
+												size='icon-sm'
+												onClick={() => handleRemoveConfluence(space.id)}
+												className='text-destructive hover:text-destructive'
+											>
+												<Trash2 className='size-4' />
+											</Button>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						<div className='flex flex-col gap-2'>
+							<p className='text-xs text-muted-foreground'>
+								This step is optional. Confluence spaces will be synchronized to the{' '}
+								<code className='px-1 py-0.5 bg-muted rounded text-xs font-mono'>confluence/</code>{' '}
+								subdirectory during "Synchronize Context".
+							</p>
+						</div>
+
+						<div className='flex justify-between'>
+							<Button variant='outline' onClick={() => setActiveTab('docs')}>
 								← Back
 							</Button>
 							<Button onClick={handleInit} disabled={isPending}>

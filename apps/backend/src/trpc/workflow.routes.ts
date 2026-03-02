@@ -1,7 +1,9 @@
 import { TRPCError } from '@trpc/server';
 import { exec } from 'child_process';
 import { eq } from 'drizzle-orm';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import fs from 'fs/promises';
+import * as yaml from 'js-yaml';
 import path from 'path';
 import { promisify } from 'util';
 import { z } from 'zod/v4';
@@ -124,6 +126,17 @@ export const workflowRoutes = {
 							id: z.string(),
 							name: z.string(),
 							size: z.number(),
+							content: z.string(), // base64-encoded file content
+						}),
+					)
+					.optional(),
+				confluence: z
+					.array(
+						z.object({
+							id: z.string(),
+							spaceUrl: z.string(),
+							apiToken: z.string().optional(),
+							email: z.string().optional(),
 						}),
 					)
 					.optional(),
@@ -143,15 +156,119 @@ export const workflowRoutes = {
 				const configExists = pathValidation.valid;
 
 				// Process configuration data
-				const { databases = [], repos = [], docFiles = [] } = input;
+				const { databases = [], repos = [], docFiles = [], confluence = [] } = input;
 
-				// TODO: Integrate these configurations with nao_core CLI
-				// For now, we'll log them and continue with the basic init
-				if (databases.length > 0 || repos.length > 0 || docFiles.length > 0) {
-					console.log('[Workflow Init] Configuration data received:', {
-						databases: databases.length,
-						repos: repos.length,
-						docFiles: docFiles.length,
+				// Save documentation files to docs/ folder
+				if (docFiles.length > 0) {
+					const docsPath = path.join(ctx.project.path, 'docs');
+					if (!existsSync(docsPath)) {
+						mkdirSync(docsPath, { recursive: true });
+					}
+
+					for (const docFile of docFiles) {
+						try {
+							// Convert base64 to buffer and write to file
+							const buffer = Buffer.from(docFile.content, 'base64');
+							const filePath = path.join(docsPath, docFile.name);
+							writeFileSync(filePath, buffer);
+							console.log(`[Workflow Init] Saved doc file: ${docFile.name}`);
+						} catch (error) {
+							console.error(`[Workflow Init] Failed to save doc file ${docFile.name}:`, error);
+							// Continue with other files even if one fails
+						}
+					}
+				}
+
+				// Update nao_config.yaml with databases and repos
+				const configPath = path.join(ctx.project.path, 'nao_config.yaml');
+				let config: Record<string, unknown> = { project_name: input.projectName || 'nao-project' };
+
+				// Load existing config if it exists
+				if (existsSync(configPath)) {
+					try {
+						const configContent = readFileSync(configPath, 'utf-8');
+						config = yaml.load(configContent) as Record<string, unknown>;
+					} catch (error) {
+						console.error('[Workflow Init] Failed to load existing config:', error);
+					}
+				}
+
+				// Update databases
+				if (databases.length > 0) {
+					// Map frontend database config to YAML format
+					config.databases = databases.map((db) => {
+						const dbConfig: Record<string, unknown> = {
+							type: db.type,
+							name: db.name,
+						};
+
+						// Parse connection string if provided
+						if (db.connectionString) {
+							// For postgres, parse the connection string
+							if (db.type === 'postgres') {
+								try {
+									const url = new URL(db.connectionString);
+									dbConfig.host = url.hostname;
+									dbConfig.port = parseInt(url.port || '5432', 10);
+									dbConfig.database = url.pathname.slice(1);
+									dbConfig.user = url.username;
+									dbConfig.password = url.password;
+								} catch {
+									// If parsing fails, store as-is
+									dbConfig.connectionString = db.connectionString;
+								}
+							} else {
+								dbConfig.connectionString = db.connectionString;
+							}
+						}
+
+						return dbConfig;
+					});
+					console.log(`[Workflow Init] Added ${databases.length} database(s) to config`);
+				}
+
+				// Update repos
+				if (repos.length > 0) {
+					config.repos = repos.map((repo) => {
+						const repoConfig: Record<string, unknown> = {
+							name: repo.url.split('/').pop()?.replace('.git', '') || 'repo',
+							url: repo.url,
+						};
+						if (repo.branch && repo.branch !== 'main') {
+							repoConfig.branch = repo.branch;
+						}
+						return repoConfig;
+					});
+					console.log(`[Workflow Init] Added ${repos.length} repo(s) to config`);
+				}
+
+				// Update confluence
+				if (confluence.length > 0) {
+					config.confluence = {
+						spaces: confluence.map((space) => ({
+							space_url: space.spaceUrl,
+							api_token: space.apiToken || '',
+							email: space.email || '',
+						})),
+					};
+					console.log(`[Workflow Init] Added ${confluence.length} Confluence space(s) to config`);
+				}
+
+				// Write updated config back to file
+				try {
+					const yamlContent = yaml.dump(config, {
+						indent: 2,
+						lineWidth: -1,
+						noRefs: true,
+						sortKeys: false,
+					});
+					writeFileSync(configPath, yamlContent);
+					console.log('[Workflow Init] Updated nao_config.yaml');
+				} catch (error) {
+					console.error('[Workflow Init] Failed to write config:', error);
+					throw new TRPCError({
+						code: 'INTERNAL_SERVER_ERROR',
+						message: `Failed to write config file: ${error}`,
 					});
 				}
 

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useMatchRoute } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -7,7 +7,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-	{ to: '/settings/project', label: 'Project' },
+	{ to: '/settings/project', label: 'Overview' },
 	{ to: '/settings/project/workflow', label: 'Workflow' },
 	{ to: '/settings/project/models', label: 'Models' },
 	{ to: '/settings/project/agent', label: 'Agent' },
@@ -16,6 +16,15 @@ const navItems: NavItem[] = [
 ];
 
 export function SettingsProjectNav() {
+	const matchRoute = useMatchRoute();
+	// Only show project nav when NOT on the projects list page
+	const isProjectsListPage = matchRoute({ to: '/settings/projects' });
+
+	// Don't render anything on the projects list page
+	if (isProjectsListPage) {
+		return null;
+	}
+
 	return (
 		<nav className='flex flex-col gap-1 sticky top-8 h-fit min-w-[140px]'>
 			{navItems.map((item) => {

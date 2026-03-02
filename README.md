@@ -1,78 +1,8 @@
-<p align="center">
-  <a href="https://getnao.io">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset=".github/images/Icon_template_IOS.svg" />
-      <img src=".github/images/Icon_template_IOS.svg" height="128" alt="nao logo" />
-    </picture>
-  </a>
-</p>
+## What is Document Agent?
 
-<h1 align="center">nao</h1>
-
-<h3 align="center">
-  The #1 Open-Source Analytics Agent
-</h3>
-
-<p align="center">
-  🌐 <a href="https://getnao.io">Website</a> · 📚 <a href="https://docs.getnao.io">Documentation</a> · 💬 <a href="https://join.slack.com/t/naolabs/shared_invite/zt-3cgdql4up-Az9FxGkTb8Qr34z2Dxp9TQ">Slack</a>
-</p>
-
-<br/>
-
-<p align="center">
-  <a href="https://getnao.io">
-    <img src=".github/images/nao_UI.png" alt="nao Chat Interface" />
-  </a>
-</p>
-
-<br/>
-
-## What is nao?
-
-nao is a framework to build and deploy analytics agent. <br/>
-Create the context of your analytics agent with nao-core cli: data, metadata, modeling, rules, etc. <br/>
+Document Agent is a framework to build and deploy analytics agent. <br/>
+Create the context of your analytics agent with the CLI: data, metadata, modeling, rules, etc. <br/>
 Deploy a UI for anyone to chat with your agent and run analytics on your data.
-
-## 🏗️ Architecture: From RAG to Context Engineering
-
-nao represents the evolution beyond traditional **RAG (Retrieval-Augmented Generation)** to what we call **Context Engineering**.
-
-### Traditional RAG vs. Context Engineering
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Traditional RAG                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  1. Chunk documents → 2. Embed with vectors → 3. Store in Vector DB  │
-│                                                                       │
-│  Query → Embed → Similarity Search → Retrieve K Chunks → Generate     │
-│                                                                       │
-│  Challenges:                                                         │
-│  • Embedding costs at scale                                          │
-│  • Stale embeddings require re-indexing                             │
-│  • No semantic understanding during retrieval                       │
-│  • "Black box" retrieval process                                    │
-│                                                                       │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                      nao: Context Engineering                      │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  1. Sync context to filesystem → 2. Agent explores with tools       │
-│                                                                       │
-│  Query → Agent Reasoning → Tool Use (read/search/grep) → Generate   │
-│                                                                       │
-│  Advantages:                                                         │
-│  ✅ No embedding costs or vector databases                          │
-│  ✅ Always up-to-date (read directly from source)                   │
-│  ✅ Exploratory - agent can iteratively search                     │
-│  ✅ Transparent reasoning - see what the agent reads               │
-│  ✅ Simpler infrastructure                                          │
-│                                                                       │
-└─────────────────────────────────────────────────────────────────────┘
-```
 
 ### How It Works
 
@@ -87,7 +17,10 @@ project/
 │       ├── preview.md       # Sample data
 │       └── description.md   # Table documentation
 ├── repos/              # Git repositories (cloned as files)
-├── docs/               # Documentation (Notion exports)
+├── docs/               # Documentation files
+│   ├── notion/         # Notion page exports
+│   ├── confluence/     # Confluence page exports
+│   └── *.md            # Uploaded documentation files
 ├── semantics/          # Business rules and definitions
 └── agent/              # Custom tools and skills
 ```
@@ -135,141 +68,96 @@ For **business users**:
 - 🧊 **Transparent Reasoning** — See the agent reasoning and sources clearly
 - 👍 **Easy Feedback** — Send feedback to the data team when a answer is right or wrong
 
-## ⚡️ Quickstart your agent in 1 minute
+## Quickstart your agent in 1 minute
 
-- **Step 1**: Install nao-core package
+- **Step 1**: Get the Code
 
     ```bash
-    pip install nao-core
+    # Clone the repository
+    git clone https://github.com/ianlimle/icai-docs-agent.git
+    cd icai-docs-agent
+
+    # Install dependencies
+    npm install
+
+    # Start PostgreSQL using Docker Compose
+    docker-compose -f docker-compose.postgres.yml up -d
+
+    # Generate database migration files
+    cd apps/backend && npm run db:generate
+
+    # Apply migration files to set up the database schema
+    npm run db:push
+
+    # Return to the project root
+    cd ../..
+
+    # Follow the development setup in CONTRIBUTING.md
     ```
+
+    > **Note**: The database migrations set up all required tables including users, projects, chats, messages, and more. PostgreSQL runs on port 8888 to avoid conflicts with local PostgreSQL instances.
 
 <br/>
 
-- **Step 2**: Initialize a nao project
-
-    ```bash
-    nao init
-    ```
-
-    It will ask you:
-    - To name your project
-    - If you want to connect a database _(optional)_
-    - If you want to add a repo in agent context _(optional)_
-    - To add an LLM key _(optional)_
-    - If you want to setup a Slack connection _(optional)_
-
-    💡 You can skip any optional question and configure them later in your `nao_config.yaml` file.
-
-    This will create:
-    - A new folder with your project name
-    - An architecture for your context files
-    - A `nao_config.yaml` configuration file
-    - A `RULES.md` file
+- **Step 2**: Sign In
+    - Use Google OAuth or email to sign in
+    - Create your account
 
 <br/>
 
-- **Step 3**: Verify your setup
+- **Step 3**: Create Your First Project
+    - Navigate to **Settings > Projects**
+    - Click **+ New Project**
+    - Enter a project name (e.g., "Analytics Dashboard")
+    - Click **Create & Setup Project**
 
-    cd to the project folder and run:
-
-    ```bash
-    nao debug
-    ```
-
-<br/>
-
-- **Step 4**: Synchronize your context
-
-    ```bash
-    nao sync
-    ```
-
-    This will populate your context folder with your context files (data, metadata, repos, etc.)
+    This will automatically create a project directory and open the workflow setup.
 
 <br/>
 
-- **Step 5**: Launch the chat and ask questions
+- **Step 4**: Complete the Workflow Setup
 
-    ```bash
-    nao chat
-    ```
+    The workflow has 3 steps to configure your agent:
+    1. **Initialize Project**
+        - Optionally add databases (PostgreSQL, Snowflake, BigQuery, etc.)
+        - Optionally add Git repositories for code context
+        - Optionally upload documentation files (PDF, MD, TXT, etc.)
+        - Optionally add Confluence spaces to sync documentation from your Confluence wiki
+            - Enter the Confluence Space URL (e.g., `https://company.atlassian.net/wiki/spaces/TEAM`)
+            - Provide your API token (generate at https://id.atlassian.com/manage-profile/security/api-tokens)
+            - Enter your Atlassian account email
+        - Click **Initialize Project**
 
-    This will start the nao chat UI. It will open the chat interface in your browser at `http://localhost:5005`.
-    From there, you can start asking questions to your agent.
+    2. **Verify Setup**
+        - Validates your configuration
+        - Checks database connections
+        - Verifies LLM provider settings
+        - Click **Verify Setup**
 
-## Evaluation framework
+    3. **Synchronize Context**
+        - Select which providers to sync (Databases, Repos, Docs, Semantics)
+        - Click **Synchronize Context**
+        - This populates your project with metadata and documentation:
+            - Database schemas → `databases/`
+            - Repository code → `repos/`
+            - Uploaded docs → `docs/`
+            - Confluence pages → `docs/confluence/`
+            - Business semantics → `semantics/`
 
-Unit test your agent performance before deploying it to users. First, create a folder `tests/` with questions and expected SQL in yaml.
-Then, measure agent's performance on examples with nao test command:
+<br/>
 
-```bash
-nao test
-```
+- **Step 5**: Start Chatting
 
-View results in tests panel:
+    Once all 3 workflow steps are complete, you can start asking questions:
+    - "What's our monthly revenue trend?"
+    - "Show me the top 10 customers by lifetime value"
+    - "How many new users signed up last week?"
 
-```bash
-nao test server
-```
-
-## Commands
-
-```bash
-nao --help
-Usage: nao COMMAND
-
-╭─ Commands ────────────────────────────────────────────────────────────────╮
-│ chat         Start the nao chat UI.                                       │
-│ init         Initialize a new nao project.                                │
-│ sync         Sync context from your context sources (databases, repos)    │
-│ test         Measure agent's performance on test examples.                │
-│ debug        Debug and troubleshoot your nao setup.                       │
-│ --help (-h)  Display this message and exit.                               │
-│ --version    Display application version.                                 │
-╰───────────────────────────────────────────────────────────────────────────╯
-```
-
-## 🐳 Docker
-
-Pull the image from DockerHub:
-
-```bash
-docker pull getnao/nao:latest
-```
-
-Run nao chat with Docker using the example project bundled in the image:
-
-```bash
-docker run -d \
-  --name nao \
-  -p 5005:5005 \
-  -e BETTER_AUTH_URL=http://localhost:5005 \
-  getnao/nao:latest
-```
-
-Run nao chat with Docker using your local nao project:
-
-```bash
-docker run -d \
-  --name nao \
-  -p 5005:5005 \
-  -e BETTER_AUTH_URL=http://localhost:5005 \
-  -v /path/to/your/nao-project:/app/project \
-  -e NAO_DEFAULT_PROJECT_PATH=/app/project \
-  getnao/nao:latest
-```
-
-Access the UI at http://localhost:5005 (or at any URL you configured).
-
-See the [DockerHub page](https://hub.docker.com/r/getnao/nao) for more details.
-
-For end-to-end self-hosted deployment (for example on Cloud Run with PostgreSQL), see the [Deployment Guide](https://docs.getnao.io/nao-agent/self-hosting/deployment-guide).
-
-## 👩🏻‍💻 Development
+## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commands, and guidelines.
 
-## 📒 Stack
+## Stack
 
 ### Backend
 
@@ -282,23 +170,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commands, and guid
 - tRPC client: https://trpc.io/docs/client/tanstack-react-query/usage
 - Tanstack Query: https://tanstack.com/query/latest/docs/framework/react/overview
 - Shadcn: https://ui.shadcn.com/docs/components
-
-## ⛹️‍♀️ Join the Community
-
-- Star the repo
-- Subscribe to releases (Watch → Custom → Releases)
-- Follow us on [LinkedIn](https://www.linkedin.com/company/getnao)
-- Join our [Slack](https://join.slack.com/t/naolabs/shared_invite/zt-3cgdql4up-Az9FxGkTb8Qr34z2Dxp9TQ)
-- Contribute to the repo!
-
-## 🫰🏻 Partners
-
-nao Labs is a proud Y Combinator company!
-
-<a href="https://ycombinator.com/">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Y_Combinator_logo.svg/1200px-Y_Combinator_logo.svg.png" alt="YCombinator" style="padding: 10px" width="70px">
-</a>
-
-## 📄 License
-
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.

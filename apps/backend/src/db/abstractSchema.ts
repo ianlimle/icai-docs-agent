@@ -54,7 +54,10 @@ export type NewAuditLog = typeof sqliteSchema.auditLogs.$inferInsert;
 export type DBGuardrailsSettings = typeof sqliteSchema.guardrailsSettings.$inferSelect;
 export type NewGuardrailsSettings = typeof sqliteSchema.guardrailsSettings.$inferInsert;
 
+export type DBUserPreferences = typeof sqliteSchema.userPreferences.$inferSelect;
+export type NewUserPreferences = typeof sqliteSchema.userPreferences.$inferInsert;
+
 // Re-export schema tables for easier importing
-export const { auditLogs, guardrailsSettings } = allSchema;
+export const { auditLogs, guardrailsSettings, userPreferences } = allSchema;
 
 export default allSchema as typeof sqliteSchema;

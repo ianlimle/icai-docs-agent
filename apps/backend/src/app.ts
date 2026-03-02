@@ -41,7 +41,7 @@ const app = fastify({
 					},
 				}
 			: true,
-	bodyLimit: 35 * 1024 * 1024, // ~25 MB audio * 4/3 base64 overhead + JSON envelope
+	bodyLimit: 100 * 1024 * 1024, // Increased to 100 MB for large documentation file uploads
 	routerOptions: { maxParamLength: 2048 },
 }).withTypeProvider<ZodTypeProvider>();
 export type App = typeof app;

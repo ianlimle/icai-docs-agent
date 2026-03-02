@@ -116,7 +116,7 @@ export function SettingsMemories() {
 			<SettingsCard
 				title='Memory'
 				titleSize='lg'
-				description='Memories enables nao to learn about you and your preferences over time.'
+				description='Memory enables Document Agent to learn about you and your preferences over time.'
 				divide
 			>
 				<SettingsControlRow

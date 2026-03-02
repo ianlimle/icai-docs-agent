@@ -13,10 +13,10 @@ export function UserAddedToProjectEmail({ userName, projectName, loginUrl, to, t
 			<p>
 				{isNewUser ? (
 					<>
-						You've been invited to join the project <strong>{projectName}</strong> on nao.
+						You've been invited to join the project <strong>{projectName}</strong> on Document Agent.
 					</>
 				) : (
-					"You've been added to a new project on nao."
+					"You've been added to a new project on Document Agent."
 				)}
 			</p>
 
@@ -43,11 +43,11 @@ export function UserAddedToProjectEmail({ userName, projectName, loginUrl, to, t
 					<p>
 						<strong>Project:</strong> {projectName}
 					</p>
-					<p>You can now access this project using your existing nao account.</p>
+					<p>You can now access this project using your existing Document Agent account.</p>
 				</div>
 			)}
 
-			<EmailButton href={loginUrl}>Login to nao</EmailButton>
+			<EmailButton href={loginUrl}>Login to Document Agent</EmailButton>
 
 			<p>
 				If you have any questions{isNewUser ? '' : ' about this project'}, please contact your project
@@ -55,7 +55,7 @@ export function UserAddedToProjectEmail({ userName, projectName, loginUrl, to, t
 			</p>
 
 			<div className='footer'>
-				<p>This is an automated message from nao.</p>
+				<p>This is an automated message from Document Agent.</p>
 			</div>
 		</EmailLayout>
 	);

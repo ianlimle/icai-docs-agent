@@ -288,7 +288,7 @@ function ChatInputBase({
 						]}
 						onChange={(value) => setHasInput(!!value.trim())}
 						onEnter={(value, mentions) => submitMessage(value, mentions)}
-						className='w-full nao-input'
+						className='w-full document-agent-input'
 						theme={theme}
 					/>
 

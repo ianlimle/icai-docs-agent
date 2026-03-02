@@ -17,6 +17,7 @@ import { Route as SidebarLayoutChatLayoutRouteImport } from './routes/_sidebar-l
 import { Route as SidebarLayoutSettingsIndexRouteImport } from './routes/_sidebar-layout.settings.index'
 import { Route as SidebarLayoutChatLayoutIndexRouteImport } from './routes/_sidebar-layout._chat-layout.index'
 import { Route as SidebarLayoutSettingsUsageRouteImport } from './routes/_sidebar-layout.settings.usage'
+import { Route as SidebarLayoutSettingsProjectsRouteImport } from './routes/_sidebar-layout.settings.projects'
 import { Route as SidebarLayoutSettingsProjectRouteImport } from './routes/_sidebar-layout.settings.project'
 import { Route as SidebarLayoutSettingsMemoryRouteImport } from './routes/_sidebar-layout.settings.memory'
 import { Route as SidebarLayoutSettingsGeneralRouteImport } from './routes/_sidebar-layout.settings.general'
@@ -70,6 +71,12 @@ const SidebarLayoutSettingsUsageRoute =
   SidebarLayoutSettingsUsageRouteImport.update({
     id: '/usage',
     path: '/usage',
+    getParentRoute: () => SidebarLayoutSettingsRoute,
+  } as any)
+const SidebarLayoutSettingsProjectsRoute =
+  SidebarLayoutSettingsProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
     getParentRoute: () => SidebarLayoutSettingsRoute,
   } as any)
 const SidebarLayoutSettingsProjectRoute =
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
   '/settings/project': typeof SidebarLayoutSettingsProjectRouteWithChildren
+  '/settings/projects': typeof SidebarLayoutSettingsProjectsRoute
   '/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/settings/': typeof SidebarLayoutSettingsIndexRoute
   '/settings/project/agent': typeof SidebarLayoutSettingsProjectAgentRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/settings/analytics': typeof SidebarLayoutSettingsAnalyticsRoute
   '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
+  '/settings/projects': typeof SidebarLayoutSettingsProjectsRoute
   '/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/settings': typeof SidebarLayoutSettingsIndexRoute
   '/settings/project/agent': typeof SidebarLayoutSettingsProjectAgentRoute
@@ -203,6 +212,7 @@ export interface FileRoutesById {
   '/_sidebar-layout/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/_sidebar-layout/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
   '/_sidebar-layout/settings/project': typeof SidebarLayoutSettingsProjectRouteWithChildren
+  '/_sidebar-layout/settings/projects': typeof SidebarLayoutSettingsProjectsRoute
   '/_sidebar-layout/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/_sidebar-layout/_chat-layout/': typeof SidebarLayoutChatLayoutIndexRoute
   '/_sidebar-layout/settings/': typeof SidebarLayoutSettingsIndexRoute
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/memory'
     | '/settings/project'
+    | '/settings/projects'
     | '/settings/usage'
     | '/settings/'
     | '/settings/project/agent'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/settings/analytics'
     | '/settings/general'
     | '/settings/memory'
+    | '/settings/projects'
     | '/settings/usage'
     | '/settings'
     | '/settings/project/agent'
@@ -268,6 +280,7 @@ export interface FileRouteTypes {
     | '/_sidebar-layout/settings/general'
     | '/_sidebar-layout/settings/memory'
     | '/_sidebar-layout/settings/project'
+    | '/_sidebar-layout/settings/projects'
     | '/_sidebar-layout/settings/usage'
     | '/_sidebar-layout/_chat-layout/'
     | '/_sidebar-layout/settings/'
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       path: '/usage'
       fullPath: '/settings/usage'
       preLoaderRoute: typeof SidebarLayoutSettingsUsageRouteImport
+      parentRoute: typeof SidebarLayoutSettingsRoute
+    }
+    '/_sidebar-layout/settings/projects': {
+      id: '/_sidebar-layout/settings/projects'
+      path: '/projects'
+      fullPath: '/settings/projects'
+      preLoaderRoute: typeof SidebarLayoutSettingsProjectsRouteImport
       parentRoute: typeof SidebarLayoutSettingsRoute
     }
     '/_sidebar-layout/settings/project': {
@@ -496,6 +516,7 @@ interface SidebarLayoutSettingsRouteChildren {
   SidebarLayoutSettingsGeneralRoute: typeof SidebarLayoutSettingsGeneralRoute
   SidebarLayoutSettingsMemoryRoute: typeof SidebarLayoutSettingsMemoryRoute
   SidebarLayoutSettingsProjectRoute: typeof SidebarLayoutSettingsProjectRouteWithChildren
+  SidebarLayoutSettingsProjectsRoute: typeof SidebarLayoutSettingsProjectsRoute
   SidebarLayoutSettingsUsageRoute: typeof SidebarLayoutSettingsUsageRoute
   SidebarLayoutSettingsIndexRoute: typeof SidebarLayoutSettingsIndexRoute
 }
@@ -506,6 +527,7 @@ const SidebarLayoutSettingsRouteChildren: SidebarLayoutSettingsRouteChildren = {
   SidebarLayoutSettingsMemoryRoute: SidebarLayoutSettingsMemoryRoute,
   SidebarLayoutSettingsProjectRoute:
     SidebarLayoutSettingsProjectRouteWithChildren,
+  SidebarLayoutSettingsProjectsRoute: SidebarLayoutSettingsProjectsRoute,
   SidebarLayoutSettingsUsageRoute: SidebarLayoutSettingsUsageRoute,
   SidebarLayoutSettingsIndexRoute: SidebarLayoutSettingsIndexRoute,
 }

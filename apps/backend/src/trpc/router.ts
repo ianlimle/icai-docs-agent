@@ -8,6 +8,7 @@ import { guardrailsRoutes } from './guardrails.routes';
 import { mcpRoutes } from './mcp.routes';
 import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
+import { projectsRoutes } from './projects.routes';
 import { skillRoutes } from './skill.routes';
 import { systemRoutes } from './system.routes';
 import { telemetryRoutes } from './telemetry.routes';
@@ -24,6 +25,7 @@ export const trpcRouter = router({
 	feedback: feedbackRoutes,
 	posthog: posthogRoutes,
 	project: projectRoutes,
+	projects: projectsRoutes,
 	usage: usageRoutes,
 	user: userRoutes,
 	google: googleRoutes,

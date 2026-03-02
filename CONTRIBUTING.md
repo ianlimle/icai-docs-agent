@@ -1,8 +1,30 @@
-# 🪄 Contributing to nao
+# 🪄 Contributing to Document Agent
 
-Thank you for your interest in contributing to nao! 🎉
+Thank you for your interest in contributing to Document Agent! 🎉
 
 ## Getting Started
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/ianlimle/icai-docs-agent.git
+cd icai-docs-agent
+
+# Install dependencies
+npm install
+
+# Start PostgreSQL via Docker Compose
+npm run pg:start
+
+# Generate and apply database migrations
+cd apps/backend
+npm run db:generate init
+npm run db:push
+cd ../..
+```
+
+> **Note:** The database migrations set up all required tables including users, projects, organizations, chats, messages, and more. PostgreSQL runs on port 8888 to avoid conflicts with local PostgreSQL instances. If you need to reset the database, run `npm run pg:reset`.
 
 ### Running the project
 
@@ -117,9 +139,9 @@ chat/
 | -------------------------- | -------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `DB_URI`                   | No       | Database connection string (SQLite or PostgreSQL)                       | `sqlite:./db.sqlite` or `postgres://user:pass@host:8888/db` |
 | `DB_QUERY_LOGGING`         | No       | Enable SQL query logging (set to 'true')                                | `true`                                                      |
-| `POSTGRES_USER`            | No       | PostgreSQL username for docker-compose                                  | `nao`                                                       |
-| `POSTGRES_PASSWORD`        | No       | PostgreSQL password for docker-compose                                  | `nao`                                                       |
-| `POSTGRES_DB`              | No       | PostgreSQL database name for docker-compose                             | `nao`                                                       |
+| `POSTGRES_USER`            | No       | PostgreSQL username for docker-compose                                  | `document_agent`                                            |
+| `POSTGRES_PASSWORD`        | No       | PostgreSQL password for docker-compose                                  | `document_agent`                                            |
+| `POSTGRES_DB`              | No       | PostgreSQL database name for docker-compose                             | `document_agent`                                            |
 | `BETTER_AUTH_SECRET`       | Yes      | Secret key for authentication (generate with `openssl rand -base64 32`) | Random base64 string                                        |
 | `BETTER_AUTH_URL`          | Yes      | Public URL of your app for auth callbacks                               | `http://localhost:3000`                                     |
 | `OPENAI_API_KEY`           | Yes\*    | OpenAI API key for LLM provider                                         | `sk-...`                                                    |
@@ -129,7 +151,7 @@ chat/
 | `APP_VERSION`              | No       | Application version metadata                                            | `dev`                                                       |
 | `APP_COMMIT`               | No       | Git commit hash for version tracking                                    | `unknown`                                                   |
 | `APP_BUILD_DATE`           | No       | Build date for version tracking                                         | Empty                                                       |
-| `NAO_DEFAULT_PROJECT_PATH` | Yes\*    | Path to nao project context folder                                      | `/path/to/project`                                          |
+| `NAO_DEFAULT_PROJECT_PATH` | Yes\*    | Path to Document Agent project context folder                           | `/path/to/project`                                          |
 | `SMTP_HOST`                | No       | SMTP server hostname for email                                          | `smtp.gmail.com`                                            |
 | `SMTP_SSL`                 | No       | Use SSL for SMTP (default: false)                                       | `false`                                                     |
 | `SMTP_PORT`                | No       | SMTP server port (default: 587)                                         | `587`                                                       |
@@ -164,8 +186,5 @@ chat/
 5. Open a Pull Request
 
 ## Questions?
-
-- 💬 [Join our Slack](https://join.slack.com/t/naolabs/shared_invite/zt-3cgdql4up-Az9FxGkTb8Qr34z2Dxp9TQ)
-- 🐛 [Open an issue](https://github.com/getnao/chat/issues)
 
 Thank you for contributing! 🙏

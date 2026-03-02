@@ -6,11 +6,9 @@ import { ModifyUserForm } from '@/components/settings/modify-user-form';
 import { useGetSigninLocation } from '@/hooks/useGetSigninLocation';
 import { UserProfileCard } from '@/components/settings/profile-card';
 import { useUserPageContext } from '@/contexts/user.provider';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { soundNotificationStorage } from '@/hooks/use-stream-end-sound';
 import { ThemeSelector } from '@/components/settings/theme-selector';
 import { SettingsCard } from '@/components/ui/settings-card';
-import { SettingsControlRow, SettingsToggleRow } from '@/components/ui/settings-toggle-row';
+import { SettingsControlRow } from '@/components/ui/settings-toggle-row';
 import { trpc } from '@/main';
 
 export const Route = createFileRoute('/_sidebar-layout/settings/general')({
@@ -23,7 +21,6 @@ function GeneralPage() {
 	const user = session?.user;
 	const queryClient = useQueryClient();
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
-	const [soundEnabled, setSoundEnabled] = useLocalStorage(soundNotificationStorage);
 
 	const isAdmin = project.data?.userRole === 'admin';
 	const navigation = useGetSigninLocation();
@@ -62,14 +59,7 @@ function GeneralPage() {
 			<ModifyUserForm isAdmin={isAdmin} />
 
 			<SettingsCard title='General Settings' divide>
-				<SettingsToggleRow
-					id='sound-notification'
-					label='Sound notification'
-					description='Play a sound when the agent finishes responding.'
-					checked={soundEnabled}
-					onCheckedChange={setSoundEnabled}
-				/>
-				<SettingsControlRow label='Theme' description='Choose how nao looks.' control={<ThemeSelector />} />
+				<SettingsControlRow label='Theme' control={<ThemeSelector />} />
 			</SettingsCard>
 
 			{isAdmin && <SettingsVersionInfo />}

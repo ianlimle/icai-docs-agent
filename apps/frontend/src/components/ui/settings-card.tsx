@@ -6,6 +6,7 @@ interface SettingsCardProps {
 	titleSize?: 'md' | 'lg';
 	description?: string;
 	action?: React.ReactNode;
+	badge?: React.ReactNode;
 	children: React.ReactNode;
 	className?: string;
 	divide?: boolean;
@@ -17,6 +18,7 @@ export function SettingsCard({
 	titleSize = 'md',
 	description,
 	action,
+	badge,
 	children,
 	className,
 	divide = false,
@@ -54,7 +56,10 @@ export function SettingsCard({
 							</p>
 						)}
 					</div>
-					{action && <div className='ml-auto'>{action}</div>}
+					<div className='flex items-center gap-2'>
+						{badge && <div>{badge}</div>}
+						{action && <div>{action}</div>}
+					</div>
 				</div>
 			)}
 

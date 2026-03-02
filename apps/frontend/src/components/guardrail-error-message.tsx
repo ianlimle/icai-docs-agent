@@ -14,7 +14,9 @@ interface GuardrailErrorMessageProps {
 }
 
 export function GuardrailErrorMessage({ violations, sanitizedQuery, onDismiss }: GuardrailErrorMessageProps) {
-	if (violations.length === 0) return null;
+	if (violations.length === 0) {
+		return null;
+	}
 
 	const severityOrder: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 	const maxSeverity = violations.reduce(

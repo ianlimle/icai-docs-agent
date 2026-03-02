@@ -18,6 +18,7 @@ from .notion import NotionConfig
 from .repos import RepoConfig
 from .skills import SkillsConfig
 from .slack import SlackConfig
+from .confluence import ConfluenceConfig
 
 
 class NaoConfigError(Exception):
@@ -33,6 +34,7 @@ class NaoConfig(BaseModel):
     databases: list[AnyDatabaseConfig] = Field(default_factory=list, description="The databases to use")
     repos: list[RepoConfig] = Field(default_factory=list, description="The repositories to use")
     notion: NotionConfig | None = Field(default=None, description="The Notion configurations")
+    confluence: ConfluenceConfig | None = Field(default=None, description="The Confluence configuration")
     llm: LLMConfig | None = Field(default=None, description="The LLM configuration")
     slack: SlackConfig | None = Field(default=None, description="The Slack configuration")
     mcp: McpConfig | None = Field(default=None, description="The MCP configuration")
@@ -62,6 +64,7 @@ class NaoConfig(BaseModel):
             llm=cls._prompt_llm(),
             slack=cls._prompt_slack(),
             notion=cls._prompt_notion(),
+            confluence=cls._prompt_confluence(),
             mcp=cls._prompt_mcp(project_name),
             skills=cls._prompt_skills(project_name),
         )
@@ -74,6 +77,7 @@ class NaoConfig(BaseModel):
         llm = existing.llm
         slack = existing.slack
         notion = existing.notion
+        confluence = existing.confluence
         mcp = existing.mcp
         skills = existing.skills
 
@@ -89,6 +93,8 @@ class NaoConfig(BaseModel):
             UI.print("  Slack: configured")
         if notion:
             UI.print("  Notion: configured")
+        if confluence:
+            UI.print(f"  Confluence: {len(confluence.spaces)} spaces")
         if mcp:
             UI.print("  MCP: configured")
         if skills:
@@ -108,6 +114,9 @@ class NaoConfig(BaseModel):
         if not notion:
             notion = cls._prompt_notion()
 
+        if not confluence:
+            confluence = cls._prompt_confluence()
+
         if not mcp:
             mcp = cls._prompt_mcp(existing.project_name)
 
@@ -121,6 +130,7 @@ class NaoConfig(BaseModel):
             llm=llm,
             slack=slack,
             notion=notion,
+            confluence=confluence,
             mcp=mcp,
             skills=skills,
         )
@@ -188,6 +198,13 @@ class NaoConfig(BaseModel):
         """Prompt for Notion configuration using questionary."""
         if ask_confirm("Set up Notion integration?", default=False):
             return NotionConfig.promptConfig()
+        return None
+
+    @staticmethod
+    def _prompt_confluence() -> ConfluenceConfig | None:
+        """Prompt for Confluence configuration using questionary."""
+        if ask_confirm("Set up Confluence integration?", default=False):
+            return ConfluenceConfig.promptConfig()
         return None
 
     @staticmethod

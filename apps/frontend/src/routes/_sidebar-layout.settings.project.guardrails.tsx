@@ -1,9 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Save, RotateCcw, Trash2, Plus, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { RotateCcw, Trash2, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { trpc } from '@/main';
 import { Button } from '@/components/ui/button';
@@ -21,7 +18,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -90,7 +86,9 @@ function GuardrailsSettingsPage() {
 	};
 
 	const handleAddPattern = (pattern: typeof editingPattern) => {
-		if (!pattern) return;
+		if (!pattern) {
+			return;
+		}
 
 		if (pattern.id) {
 			// Edit existing pattern
@@ -508,7 +506,7 @@ function GuardrailsSettingsPage() {
 												<Button
 													variant='ghost'
 													size='icon-sm'
-													onClick={() => handleRemovePattern(pattern.id!)}
+													onClick={() => handleRemovePattern(pattern.id)}
 												>
 													<Trash2 className='size-4' />
 												</Button>

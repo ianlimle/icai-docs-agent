@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface SettingsControlRowProps {
 	label: string;
-	description: string;
+	description?: string;
 	control: React.ReactNode;
 	id?: string;
 	className?: string;
@@ -12,7 +12,7 @@ interface SettingsControlRowProps {
 export function SettingsControlRow({ id, label, description, control, className }: SettingsControlRowProps) {
 	return (
 		<div className={cn('flex items-center justify-between', className)}>
-			<div className='flex flex-col gap-0.5'>
+			<div className={cn('flex flex-col gap-0.5', !description && 'gap-0')}>
 				{id ? (
 					<label htmlFor={id} className='text-sm font-medium text-foreground cursor-pointer h-5'>
 						{label}
@@ -20,7 +20,7 @@ export function SettingsControlRow({ id, label, description, control, className 
 				) : (
 					<p className='text-sm font-medium text-foreground h-5'>{label}</p>
 				)}
-				<p className='text-xs text-muted-foreground'>{description}</p>
+				{description && <p className='text-xs text-muted-foreground'>{description}</p>}
 			</div>
 			{control}
 		</div>

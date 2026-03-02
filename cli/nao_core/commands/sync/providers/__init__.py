@@ -6,12 +6,14 @@ from .base import SyncProvider, SyncResult
 from .databases.provider import DatabaseSyncProvider
 from .notion.provider import NotionSyncProvider
 from .repositories.provider import RepositorySyncProvider
+from .confluence.provider import ConfluenceSyncProvider
 
 # Provider registry mapping CLI-friendly names to provider instances
 PROVIDER_REGISTRY: dict[str, SyncProvider] = {
     "notion": NotionSyncProvider(),
     "repositories": RepositorySyncProvider(),
     "databases": DatabaseSyncProvider(),
+    "confluence": ConfluenceSyncProvider(),
 }
 
 # Default providers in order of execution
@@ -74,6 +76,7 @@ __all__ = [
     "ProviderSelection",
     "DatabaseSyncProvider",
     "RepositorySyncProvider",
+    "ConfluenceSyncProvider",
     "PROVIDER_REGISTRY",
     "PROVIDER_CHOICES",
     "DEFAULT_PROVIDERS",

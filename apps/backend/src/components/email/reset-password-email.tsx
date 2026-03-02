@@ -9,7 +9,7 @@ export function ResetPasswordEmail({ userName, temporaryPassword, loginUrl, proj
 			<p>Hi {userName},</p>
 
 			<p>
-				Your password on the project <strong>{projectName}</strong> has been reset on nao.
+				Your password on the project <strong>{projectName}</strong> has been reset on Document Agent.
 			</p>
 
 			<div className='credentials'>
@@ -23,12 +23,12 @@ export function ResetPasswordEmail({ userName, temporaryPassword, loginUrl, proj
 				You will be required to change this password on your next login for security reasons.
 			</WarningBox>
 
-			<EmailButton href={loginUrl}>Login to nao</EmailButton>
+			<EmailButton href={loginUrl}>Login to Document Agent</EmailButton>
 
 			<p>If you did not request this password reset, please contact your project administrator immediately.</p>
 
 			<div className='footer'>
-				<p>This is an automated message from nao.</p>
+				<p>This is an automated message from Document Agent.</p>
 			</div>
 		</EmailLayout>
 	);

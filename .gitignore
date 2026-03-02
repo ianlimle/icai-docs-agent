@@ -16,6 +16,8 @@ nao-chat-server
 
 *.pyc
 
-rsa_key.*icao-annexes/
+rsa_key.*
 
-icao-annexes
+apps/backend/projects
+
+

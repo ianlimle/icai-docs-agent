@@ -8,7 +8,6 @@ import type { ReasoningUIPart, ToolUIPart } from 'ai';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { UITools, UIToolPart, UIMessage, UIMessagePart, StaticToolName } from '@nao/backend/chat';
 import type { CollapsiblePart, ToolGroupPart, GroupedMessagePart, MessageGroup } from '@/types/ai';
-import type { AgentHelpers } from '@/hooks/use-agent';
 
 /** Check if a tool has reached its final state (no more actions needed). */
 export const isToolSettled = ({ state }: UIToolPart) => {

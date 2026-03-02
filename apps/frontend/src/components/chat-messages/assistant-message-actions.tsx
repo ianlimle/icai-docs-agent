@@ -161,7 +161,9 @@ function NegativeFeedbackDialog({ open, onOpenChange, onSubmit, isPending }: Neg
 			<DialogContent showCloseButton>
 				<DialogHeader>
 					<DialogTitle>What went wrong?</DialogTitle>
-					<DialogDescription>Help us improve by explaining what was wrong with this response.</DialogDescription>
+					<DialogDescription>
+						Help us improve by explaining what was wrong with this response.
+					</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className='flex flex-col gap-4'>

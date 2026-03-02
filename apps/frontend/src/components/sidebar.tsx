@@ -1,4 +1,4 @@
-import { ArrowLeftFromLine, ArrowRightToLine, PlusIcon, ArrowLeft } from 'lucide-react';
+import { ArrowLeftFromLine, ArrowRightToLine, PlusIcon, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useEffect, useCallback } from 'react';
 import { Link, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { ChatList } from './sidebar-chat-list';
@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { cn, hideIf } from '@/lib/utils';
 import { useChatListQuery } from '@/queries/use-chat-list-query';
 import { useSidebar } from '@/contexts/sidebar';
+import { useActiveProject } from '@/hooks/use-projects';
 
 export function Sidebar() {
 	const chats = useChatListQuery();
 	const navigate = useNavigate();
 	const matchRoute = useMatchRoute();
 	const { isCollapsed, toggle: toggleSidebar } = useSidebar();
+	const { data: activeProject } = useActiveProject();
 
 	const isInSettings = matchRoute({ to: '/settings', fuzzy: true });
 	const effectiveIsCollapsed = isInSettings ? false : isCollapsed;
@@ -103,6 +105,20 @@ export function Sidebar() {
 								)}
 							</Button>
 						</div>
+
+						{/* Active project indicator */}
+						{activeProject && (
+							<div
+								className={cn(
+									'flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground rounded-md bg-muted/50 mx-1',
+									hideIf(effectiveIsCollapsed),
+								)}
+							>
+								<CheckCircle2 className='size-3 text-green-600 dark:text-green-400 shrink-0' />
+								<span className='truncate font-medium'>{activeProject.name}</span>
+							</div>
+						)}
+
 						<Button
 							variant='outline'
 							className={cn(

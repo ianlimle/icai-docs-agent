@@ -545,3 +545,23 @@ export const guardrailsSettings = sqliteTable(
 	},
 	(t) => [index('guardrails_settings_project_id_idx').on(t.projectId)],
 );
+
+/**
+ * User preferences table for tracking active project
+ */
+export const userPreferences = sqliteTable(
+	'user_preferences',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' })
+			.unique(),
+		activeProjectId: text('active_project_id').references(() => project.id, { onDelete: 'set null' }),
+		lastProjectId: text('last_project_id'),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.default(sql`(unixepoch())`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.userId] })],
+);

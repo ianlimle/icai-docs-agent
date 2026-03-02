@@ -105,6 +105,13 @@ export const getDefaultProject = async (): Promise<DBProject | null> => {
 };
 
 export const getProjectByUserId = async (userId: string): Promise<DBProject | null> => {
+	// Try to get active project from preferences first
+	const activeProject = await getActiveProjectByUserId(userId);
+	if (activeProject) {
+		return activeProject;
+	}
+
+	// Fallback to default project path for backward compatibility
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 	if (!projectPath) {
 		return null;
@@ -173,4 +180,38 @@ export const updateEnabledToolsAndKnownServers = async (
 		.set({ enabledMcpTools: next.enabledTools, knownMcpServers: next.knownServers })
 		.where(eq(s.project.id, projectId))
 		.execute();
+};
+
+// Active project management functions
+
+export const getActiveProjectByUserId = async (userId: string): Promise<DBProject | null> => {
+	const [pref] = await db.select().from(s.userPreferences).where(eq(s.userPreferences.userId, userId)).execute();
+
+	if (!pref?.activeProjectId) {
+		return null;
+	}
+
+	return getProjectById(pref.activeProjectId);
+};
+
+export const setActiveProjectForUser = async (userId: string, projectId: string): Promise<void> => {
+	await db
+		.insert(s.userPreferences)
+		.values({
+			userId,
+			activeProjectId: projectId,
+			lastProjectId: projectId,
+		})
+		.onConflictDoUpdate({
+			target: s.userPreferences.userId,
+			set: {
+				activeProjectId: projectId,
+				lastProjectId: projectId,
+			},
+		})
+		.execute();
+};
+
+export const getProjectsByUserId = async (userId: string): Promise<DBProject[]> => {
+	return listUserProjects(userId);
 };

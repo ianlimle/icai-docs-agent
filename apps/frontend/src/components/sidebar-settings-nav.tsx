@@ -11,8 +11,8 @@ const settingsNavItems = [
 		to: '/settings/memory',
 	},
 	{
-		label: 'Project',
-		to: '/settings/project',
+		label: 'Projects',
+		to: '/settings/projects',
 	},
 	{
 		label: 'Usage & costs',

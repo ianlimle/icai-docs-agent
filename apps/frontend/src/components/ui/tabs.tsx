@@ -86,10 +86,17 @@ export function TabsContent({ value, children, className }: TabsContentProps) {
 	const { value: selectedValue } = context;
 	const isSelected = value === selectedValue;
 
-	if (!isSelected) return null;
+	if (!isSelected) {
+		return null;
+	}
 
 	return (
-		<div className={cn('mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}>
+		<div
+			className={cn(
+				'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+				className,
+			)}
+		>
 			{children}
 		</div>
 	);
