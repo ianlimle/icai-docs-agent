@@ -4,6 +4,17 @@ Thank you for your interest in contributing to Document Agent! 🎉
 
 ## Getting Started
 
+### Prerequisites
+
+Before setting up, ensure you have the following installed:
+
+- **Node.js** (v18+) and npm — [Install Node.js](https://nodejs.org/)
+- **Bun** — JavaScript runtime for backend: `curl -fsSL https://bun.sh/install | bash`
+- **uv** — Python package manager for CLI/FastAPI: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **Docker** — For PostgreSQL database: [Install Docker](https://docs.docker.com/get-docker/)
+
+> **Note**: After installing Bun and uv, restart your terminal or source your shell profile.
+
 ### Setup
 
 ```bash
@@ -11,17 +22,17 @@ Thank you for your interest in contributing to Document Agent! 🎉
 git clone https://github.com/ianlimle/icai-docs-agent.git
 cd icai-docs-agent
 
-# Install dependencies
+# Install Node.js dependencies
 npm install
 
 # Start PostgreSQL via Docker Compose
 npm run pg:start
 
-# Generate and apply database migrations
-cd apps/backend
-npm run db:generate init
-npm run db:push
-cd ../..
+# Apply database migrations
+cd apps/backend && npm run db:push && cd ../..
+
+# (Optional) Verify Python CLI dependencies are installed
+cd cli && uv sync && cd ..
 ```
 
 > **Note:** The database migrations set up all required tables including users, projects, organizations, chats, messages, and more. PostgreSQL runs on port 8888 to avoid conflicts with local PostgreSQL instances. If you need to reset the database, run `npm run pg:reset`.
@@ -34,7 +45,13 @@ At the root of the project, run:
 npm run dev
 ```
 
-This will start the project in development mode. It will start the frontend and backend in development mode.
+This will start three services in parallel:
+
+- **Backend** — Fastify API server (Bun, port 5005)
+- **Frontend** — React UI (Vite, port 3000)
+- **FastAPI** — Python server for SQL execution (port 8005)
+
+Open [http://localhost:3000](http://localhost:3000) to access the application.
 
 ### Publishing to PyPI
 

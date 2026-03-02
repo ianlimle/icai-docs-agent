@@ -72,6 +72,12 @@ For **business users**:
 
 - **Step 1**: Get the Code
 
+    **Prerequisites:**
+    - Node.js (v18+) and npm
+    - Bun: `curl -fsSL https://bun.sh/install | bash`
+    - uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+    - Docker (for PostgreSQL)
+
     ```bash
     # Clone the repository
     git clone https://github.com/ianlimle/icai-docs-agent.git
@@ -81,21 +87,18 @@ For **business users**:
     npm install
 
     # Start PostgreSQL using Docker Compose
-    docker-compose -f docker-compose.postgres.yml up -d
+    npm run pg:start
 
-    # Generate database migration files
-    cd apps/backend && npm run db:generate
+    # Apply database migrations
+    cd apps/backend && npm run db:push && cd ../..
 
-    # Apply migration files to set up the database schema
-    npm run db:push
-
-    # Return to the project root
-    cd ../..
-
-    # Follow the development setup in CONTRIBUTING.md
+    # Start the development server
+    npm run dev
     ```
 
-    > **Note**: The database migrations set up all required tables including users, projects, chats, messages, and more. PostgreSQL runs on port 8888 to avoid conflicts with local PostgreSQL instances.
+    Open [http://localhost:3000](http://localhost:3000) to access the application.
+
+    > **Note**: PostgreSQL runs on port 8888 to avoid conflicts. To reset the database, run `npm run pg:reset`.
 
 <br/>
 
