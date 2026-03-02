@@ -38,7 +38,7 @@ export const testRoutes = async (app: App) => {
 			if (!projectId) {
 				return reply
 					.status(400)
-					.send({ error: 'No project configured. Set NAO_DEFAULT_PROJECT_PATH environment variable.' });
+					.send({ error: 'No project selected. Please create or select a project first.' });
 			}
 
 			try {

@@ -145,10 +145,7 @@ export const handleAgentRoute = async (opts: HandleAgentMessageInput): Promise<H
 	const { userId, message, messageToEditId, model, mentions, projectId, requestDetails } = opts;
 
 	if (!projectId) {
-		throw new HandlerError(
-			'BAD_REQUEST',
-			'No project configured. Set NAO_DEFAULT_PROJECT_PATH environment variable.',
-		);
+		throw new HandlerError('BAD_REQUEST', 'No project selected. Please create or select a project first.');
 	}
 
 	// Validate and sanitize user query through guardrails
