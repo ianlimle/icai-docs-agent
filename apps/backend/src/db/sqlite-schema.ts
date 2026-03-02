@@ -468,7 +468,7 @@ export const auditLogs = sqliteTable(
 			.primaryKey(),
 		userId: text('user_id').notNull(),
 		projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
-		timestamp: integer('timestamp', { mode: 'timestamp' }).notNull(),
+		timestamp: integer('timestamp', { mode: 'timestamp_ms' }).notNull(),
 		eventType: text('event_type').notNull(),
 		violationType: text('violation_type').notNull(),
 		severity: text('severity', { enum: ['low', 'medium', 'high', 'critical'] }).notNull(),

@@ -76,7 +76,9 @@ class ConfluenceSyncProvider(SyncProvider):
         """
         if not items:
             console.print("\n[dim]No Confluence spaces configured[/dim]")
-            return SyncResult(provider_name=self.name, items_synced=0, summary="No Confluence configurations configured")
+            return SyncResult(
+                provider_name=self.name, items_synced=0, summary="No Confluence configurations configured"
+            )
 
         confluence_config = items[0]
         output_path.mkdir(parents=True, exist_ok=True)
@@ -91,8 +93,12 @@ class ConfluenceSyncProvider(SyncProvider):
         try:
             from atlassian import Confluence as ConfluenceClient
         except ImportError:
-            console.print("[bold red]✗[/bold red] atlassian-python-api not installed. Run: pip install atlassian-python-api")
-            return SyncResult(provider_name=self.name, items_synced=0, summary="Missing dependency: atlassian-python-api")
+            console.print(
+                "[bold red]✗[/bold red] atlassian-python-api not installed. Run: pip install atlassian-python-api"
+            )
+            return SyncResult(
+                provider_name=self.name, items_synced=0, summary="Missing dependency: atlassian-python-api"
+            )
 
         # Collect all pages from all spaces first
         all_pages_to_sync = []
@@ -102,11 +108,7 @@ class ConfluenceSyncProvider(SyncProvider):
                 space_key, base_url = self._parse_space_url(space_config.space_url)
 
                 # Initialize Confluence client
-                client = ConfluenceClient(
-                    url=base_url,
-                    username=space_config.email,
-                    password=space_config.api_token
-                )
+                client = ConfluenceClient(url=base_url, username=space_config.email, password=space_config.api_token)
 
                 # Get all pages (including child pages) from the space
                 pages = self._get_all_pages(client, space_key)
@@ -114,7 +116,7 @@ class ConfluenceSyncProvider(SyncProvider):
 
                 # Add space info to each page
                 for page in pages:
-                    page['_space_key'] = space_key
+                    page["_space_key"] = space_key
                     all_pages_to_sync.append((page, client))
 
             except Exception as e:
@@ -144,7 +146,7 @@ class ConfluenceSyncProvider(SyncProvider):
 
                     # Write to file
                     filepath = output_path / filename
-                    with open(filepath, 'w', encoding='utf-8') as f:
+                    with open(filepath, "w", encoding="utf-8") as f:
                         f.write(content)
 
                     total_pages_synced += 1
@@ -181,14 +183,14 @@ class ConfluenceSyncProvider(SyncProvider):
         Returns:
             Tuple of (space_key, base_url)
         """
-        match = re.search(r'/spaces/([^/]+)', space_url)
+        match = re.search(r"/spaces/([^/]+)", space_url)
         if not match:
             raise ValueError(f"Could not extract space key from URL: {space_url}")
 
         space_key = match.group(1)
 
         # Extract base URL (everything before /wiki)
-        base_url = space_url.split('/wiki')[0]
+        base_url = space_url.split("/wiki")[0]
 
         return space_key, base_url
 
@@ -207,7 +209,7 @@ class ConfluenceSyncProvider(SyncProvider):
         limit = 50
 
         while True:
-            pages = client.get_all_pages_from_space(space_key, start=start, limit=limit, expand='body.view')
+            pages = client.get_all_pages_from_space(space_key, start=start, limit=limit, expand="body.view")
             if not pages:
                 break
             all_pages.extend(pages)
@@ -227,19 +229,19 @@ class ConfluenceSyncProvider(SyncProvider):
         Returns:
             Tuple of (title, filename, markdown_content)
         """
-        page_id = page['id']
-        title = page.get('title', 'untitled')
-        space_key = page.get('_space_key', '')
+        page_id = page["id"]
+        title = page.get("title", "untitled")
+        space_key = page.get("_space_key", "")
 
         # Try to use body content from the page if it was already expanded
-        body_content = ''
-        if 'body' in page and 'view' in page.get('body', {}):
-            body_content = page['body']['view'].get('value', '')
+        body_content = ""
+        if "body" in page and "view" in page.get("body", {}):
+            body_content = page["body"]["view"].get("value", "")
 
         # If body content wasn't included, fetch it separately
         if not body_content:
-            content_data = client.get_page_by_id(page_id, expand='body.view')
-            body_content = content_data.get('body', {}).get('view', {}).get('value', '')
+            content_data = client.get_page_by_id(page_id, expand="body.view")
+            body_content = content_data.get("body", {}).get("view", {}).get("value", "")
 
         # Convert HTML-like storage format to markdown (basic conversion)
         markdown_content = self._html_to_markdown(body_content)
@@ -260,7 +262,7 @@ url: {web_ui_url}
 """
 
         # Sanitize title for filename
-        safe_title = re.sub(r'[^\w\s-]', '', title).strip().replace(' ', '-').lower()
+        safe_title = re.sub(r"[^\w\s-]", "", title).strip().replace(" ", "-").lower()
         filename = f"{safe_title}.md"
 
         return title, filename, markdown
@@ -272,45 +274,45 @@ url: {web_ui_url}
         For a more robust solution, consider using a library like html2text.
         """
         # Remove empty lines
-        html = re.sub(r'\n+', '\n', html)
+        html = re.sub(r"\n+", "\n", html)
 
         # Headers
-        html = re.sub(r'<h1[^>]*>(.*?)</h1>', r'\n# \1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<h2[^>]*>(.*?)</h2>', r'\n## \1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<h3[^>]*>(.*?)</h3>', r'\n### \1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<h4[^>]*>(.*?)</h4>', r'\n#### \1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<h5[^>]*>(.*?)</h5>', r'\n##### \1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<h6[^>]*>(.*?)</h6>', r'\n###### \1\n', html, flags=re.DOTALL)
+        html = re.sub(r"<h1[^>]*>(.*?)</h1>", r"\n# \1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<h2[^>]*>(.*?)</h2>", r"\n## \1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<h3[^>]*>(.*?)</h3>", r"\n### \1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<h4[^>]*>(.*?)</h4>", r"\n#### \1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<h5[^>]*>(.*?)</h5>", r"\n##### \1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<h6[^>]*>(.*?)</h6>", r"\n###### \1\n", html, flags=re.DOTALL)
 
         # Bold and italic
-        html = re.sub(r'<strong[^>]*>(.*?)</strong>', r'**\1**', html, flags=re.DOTALL)
-        html = re.sub(r'<b[^>]*>(.*?)</b>', r'**\1**', html, flags=re.DOTALL)
-        html = re.sub(r'<em[^>]*>(.*?)</em>', r'*\1*', html, flags=re.DOTALL)
-        html = re.sub(r'<i[^>]*>(.*?)</i>', r'*\1*', html, flags=re.DOTALL)
+        html = re.sub(r"<strong[^>]*>(.*?)</strong>", r"**\1**", html, flags=re.DOTALL)
+        html = re.sub(r"<b[^>]*>(.*?)</b>", r"**\1**", html, flags=re.DOTALL)
+        html = re.sub(r"<em[^>]*>(.*?)</em>", r"*\1*", html, flags=re.DOTALL)
+        html = re.sub(r"<i[^>]*>(.*?)</i>", r"*\1*", html, flags=re.DOTALL)
 
         # Links
-        html = re.sub(r'<a [^>]*href="([^"]*)"[^>]*>(.*?)</a>', r'[\2](\1)', html, flags=re.DOTALL)
+        html = re.sub(r'<a [^>]*href="([^"]*)"[^>]*>(.*?)</a>', r"[\2](\1)", html, flags=re.DOTALL)
 
         # Code blocks
-        html = re.sub(r'<pre[^>]*><code[^>]*>(.*?)</code></pre>', r'```\n\1\n```', html, flags=re.DOTALL)
-        html = re.sub(r'<code[^>]*>(.*?)</code>', r'`\1`', html, flags=re.DOTALL)
+        html = re.sub(r"<pre[^>]*><code[^>]*>(.*?)</code></pre>", r"```\n\1\n```", html, flags=re.DOTALL)
+        html = re.sub(r"<code[^>]*>(.*?)</code>", r"`\1`", html, flags=re.DOTALL)
 
         # Lists
-        html = re.sub(r'<ul[^>]*>(.*?)</ul>', r'\n\1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<ol[^>]*>(.*?)</ol>', r'\n\1\n', html, flags=re.DOTALL)
-        html = re.sub(r'<li[^>]*>(.*?)</li>', r'- \1', html, flags=re.DOTALL)
+        html = re.sub(r"<ul[^>]*>(.*?)</ul>", r"\n\1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<ol[^>]*>(.*?)</ol>", r"\n\1\n", html, flags=re.DOTALL)
+        html = re.sub(r"<li[^>]*>(.*?)</li>", r"- \1", html, flags=re.DOTALL)
 
         # Paragraphs
-        html = re.sub(r'<p[^>]*>(.*?)</p>', r'\1\n\n', html, flags=re.DOTALL)
+        html = re.sub(r"<p[^>]*>(.*?)</p>", r"\1\n\n", html, flags=re.DOTALL)
 
         # Line breaks
-        html = re.sub(r'<br\s*/?>', '\n', html)
+        html = re.sub(r"<br\s*/?>", "\n", html)
 
         # Remove remaining HTML tags
-        html = re.sub(r'<[^>]+>', '', html)
+        html = re.sub(r"<[^>]+>", "", html)
 
         # Clean up excessive whitespace
-        html = re.sub(r'\n{3,}', '\n\n', html)
+        html = re.sub(r"\n{3,}", "\n\n", html)
         html = html.strip()
 
         return html

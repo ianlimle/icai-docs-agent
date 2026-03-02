@@ -200,6 +200,8 @@ function normalizeColumnType(columnType: string): string {
 	const equivalentTypes: Record<string, string> = {
 		Jsonb: 'Json',
 		TextJson: 'Json',
+		BigInt53: 'Timestamp',
+		Timestamp: 'Timestamp',
 	};
 
 	return equivalentTypes[stripped] ?? stripped;

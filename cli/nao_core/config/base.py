@@ -11,6 +11,7 @@ from rich.console import Console
 
 from nao_core.ui import UI, ask_confirm, ask_select
 
+from .confluence import ConfluenceConfig
 from .databases import DATABASE_CONFIG_CLASSES, AnyDatabaseConfig, DatabaseType, parse_database_config
 from .llm import LLMConfig
 from .mcp import McpConfig
@@ -18,7 +19,6 @@ from .notion import NotionConfig
 from .repos import RepoConfig
 from .skills import SkillsConfig
 from .slack import SlackConfig
-from .confluence import ConfluenceConfig
 
 
 class NaoConfigError(Exception):
